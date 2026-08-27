@@ -7,8 +7,11 @@ export const CONFIG = {
   currency: '$',
   /** The car. Every priced zone at ask adds up to exactly this — see zones.js. */
   goal: GOAL,
-  /** When the board closes. Zones can be bought right up to it. */
-  endsAt: '2026-09-15T20:00:00Z',
+  /** When the board closes. Zones can be bought right up to it. 30 days from launch on
+   *  2026-08-27. The countdown in the hero and the sticky bar both read from here, and the
+   *  server does not enforce it — closing is a decision, so move this date rather than
+   *  discovering the board has shut itself on a night nobody was watching. */
+  endsAt: '2026-09-26T20:00:00Z',
 
   modelUrl: './model.glb',
   modelCredit: 'Porsche 911 model — CC0 (Sketchfab). Porsche and 911 are trademarks of Dr. Ing. h.c. F. Porsche AG.',
