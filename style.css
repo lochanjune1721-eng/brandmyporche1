@@ -49,13 +49,21 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 .hero .lede{max-width:52ch;font-size:clamp(16px,2.2vw,20px);line-height:1.4;margin:0 0 18px;color:var(--ink)}
 .hero .sub{max-width:64ch;color:var(--muted);font-size:15px;margin:0}
 
-/* The photo the whole thing is for. It carries the pitch, so it leads — but it is a
-   photograph of a real moment, not a hero banner, so it keeps its own proportions and
-   never crops the face away. Hidden entirely until the file exists (see the onerror). */
-.dream{margin:0 0 18px;max-width:560px}
+/* The pitch, under the car: one line of what this is, one of where it goes, then the ask.
+   Centred and given room, because it is the only place on the page asking for a decision. */
+.pitch{max-width:var(--max);margin:0 auto;padding:44px 16px 8px;text-align:center}
+.pitch-lead{font-size:clamp(19px,3vw,30px);line-height:1.3;letter-spacing:-.01em;
+  max-width:26ch;margin:0 auto 18px}
+.pitch-sub{font-size:clamp(15px,2vw,19px);color:var(--muted);max-width:38ch;margin:0 auto 18px}
+.pitch .finish-line{margin:0 0 18px}
+.pitch .hero-cta{justify-content:center}
+
+/* The reason the car matters, kept below the ask rather than in front of it. Hidden
+   outright until media/dream.jpg exists, rather than rendering a broken image. */
+.dream{margin:40px auto 0;max-width:560px}
 .dream img{display:block;width:100%;height:auto;border-radius:var(--radius);
   border:1px solid var(--line);background:#f2f2f4}
-.dream figcaption{margin-top:8px;font-size:13px;color:var(--muted)}
+.dream figcaption{margin-top:10px;font-size:14px;color:var(--muted)}
 .hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .meter{margin-top:18px;border:1px solid var(--line);background:#fff;border-radius:var(--radius);padding:14px}
 .meter-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px}
@@ -220,9 +228,11 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
   .hero h1{font-size:clamp(30px,10vw,40px);margin:6px 0 8px}
   .finish-line{font-size:16px;margin:0 0 8px}
   .hero .lede{font-size:15px;margin:0 0 10px}
-  .dream{max-width:none;margin:0 0 10px}
-  .dream img{max-height:34vh;object-fit:cover;object-position:center 40%}
-  .dream figcaption{font-size:12px;margin-top:6px}
+  .pitch{padding:28px 16px 4px}
+  .pitch-lead{font-size:19px;margin-bottom:12px}
+  .pitch-sub{font-size:15px;margin-bottom:12px}
+  .dream{margin-top:26px}
+  .dream figcaption{font-size:13px;margin-top:8px}
   /* three lines of the pitch, then the car. The rest is still there for anyone who scrolls. */
   .hero .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px}
   .meter{margin-top:12px;padding:11px}
