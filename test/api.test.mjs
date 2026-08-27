@@ -216,6 +216,7 @@ function fakeWebhook(event) {
 
 test('/api/zones reports sold and held separately', async () => {
   const { default: zones } = await import('../api/zones.js');
+  reply('/rest/v1/purchases?paypal_order_id=like.DEMO-', null, true, 204);   // the one-off purge
   reply('/rpc/release_expired_holds', 2);
   reply('/rest/v1/purchases', [
     { zone_id: 'H5', status: 'paid', brand_name: 'Acme', brand_url: 'https://acme.com', artwork_url: 'https://cdn/a.svg', paid_at: '2026-01-01T00:00:00Z' },
@@ -226,6 +227,19 @@ test('/api/zones reports sold and held separately', async () => {
   const out = payload(r);
   assert.deepEqual(out.sold, [{ zone: 'H5', brand: 'Acme', url: 'https://acme.com', artwork: 'https://cdn/a.svg', at: '2026-01-01T00:00:00Z' }]);
   assert.deepEqual(out.held, ['R3']);
+});
+
+test('the board clears the rows demo mode left behind', async () => {
+  // Temporary. Delete this test and the code it covers once the live board reads zero.
+  const { default: zones } = await import('../api/zones.js');
+  reply('/rest/v1/purchases?paypal_order_id=like.DEMO-', null, true, 204);
+  reply('/rpc/release_expired_holds', 0);
+  reply('/rest/v1/purchases', []);
+  await zones({ method: 'GET', headers: {} }, res());
+  const purge = calls.find(c => c.method === 'DELETE');
+  assert.ok(purge, 'a DELETE must be issued');
+  assert.match(purge.url, /paypal_order_id=like\.DEMO-\*/,
+    'and it must be narrowed to demo orders — nothing else may ever be deleted here');
 });
 
 test('the board is cacheable at the edge but never in the browser', () => {
@@ -249,6 +263,7 @@ test('everything that moves money is still no-store', async () => {
 
 test('the board survives the database being down', async () => {
   const { default: zones } = await import('../api/zones.js');
+  reply('/rest/v1/purchases?paypal_order_id=like.DEMO-', null, true, 204);
   reply('/rpc/release_expired_holds', {}, false, 500);
   reply('/rest/v1/purchases', { message: 'boom' }, false, 500);
   const r = res();
