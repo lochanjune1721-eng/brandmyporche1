@@ -59,19 +59,23 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 
 /* stage */
 .stage-wrap{max-width:var(--max);margin:0 auto;padding:12px 16px}
-.stage{position:relative;height:min(74vh,720px);min-height:420px;overflow:hidden;border-radius:22px;
-  border:1px solid #1a1d24;background:radial-gradient(900px 460px at 50% 0%,#181c25 0%,var(--stage) 58%,#06080C 100%)}
+.stage{position:relative;height:min(74vh,720px);min-height:360px;overflow:hidden;border-radius:22px;
+  border:1px solid var(--line);
+  background:radial-gradient(120% 90% at 50% 12%,#ffffff 0%,#f7f6f2 46%,#eceae4 100%)}
+@media(max-width:640px){.stage{height:min(62vh,520px);min-height:320px;border-radius:18px}}
 .stage canvas{display:block;width:100%;height:100%;touch-action:none}
 .viewbar{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 24px)}
-.viewbar button{border:1px solid rgba(255,255,255,.14);background:rgba(12,14,20,.62);backdrop-filter:blur(10px);
-  color:#E9ECF2;border-radius:999px;padding:7px 12px;font:700 11px Inter,sans-serif;cursor:pointer}
-.viewbar button:hover{background:rgba(255,255,255,.14)}
-.viewbar button.active{background:#fff;color:#0B0E14;border-color:#fff}
+.viewbar button{border:1px solid var(--line);background:rgba(255,255,255,.86);backdrop-filter:blur(10px);
+  color:var(--ink);border-radius:999px;padding:7px 12px;font:700 11px Inter,sans-serif;cursor:pointer}
+.viewbar button:hover{border-color:var(--ink)}
+.viewbar button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+@media(max-width:640px){.viewbar{gap:4px}.viewbar button{padding:6px 9px;font-size:10px}}
 .stage-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);
-  background:rgba(11,14,20,.82);color:#C9CFDA;font-size:11px;padding:7px 13px;border-radius:999px;
-  pointer-events:none;text-align:center}
-.model-status{position:absolute;right:12px;bottom:12px;background:rgba(11,14,20,.82);color:#C9CFDA;
-  border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;font-size:11px;pointer-events:none}
+  background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--muted);font-size:11px;
+  padding:7px 13px;border-radius:999px;pointer-events:none;text-align:center}
+.model-status{position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,.9);color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:11px;pointer-events:none}
+@media(max-width:640px){.stage-hint{font-size:10px;padding:6px 10px;bottom:8px}}
 .model-status:empty{display:none}
 .error-banner{max-width:var(--max);margin:8px auto 0;padding:10px 14px;background:#FEF2F2;border:1px solid #FECACA;
   border-radius:12px;color:#991B1B;font-size:12px}
@@ -200,3 +204,18 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 .error-banner.warn{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
 .held a.owner{display:flex;align-items:center;gap:8px;text-decoration:none;min-width:0}
 .held a.owner:hover span{text-decoration:underline}
+
+/* ── phone: the car is the product, so it has to be on the first screen ─────── */
+@media(max-width:640px){
+  .hero{padding:14px 16px 4px}
+  .hero h1{font-size:clamp(30px,10vw,40px);margin:6px 0 8px}
+  .finish-line{font-size:16px;margin:0 0 8px}
+  /* three lines of the pitch, then the car. The rest is still there for anyone who scrolls. */
+  .hero .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px}
+  .meter{margin-top:12px;padding:11px}
+  .meter-top b{font-size:17px}
+  .hero-cta{margin-top:10px;gap:8px}
+  .hero-cta .btn{padding:9px 14px;font-size:12px}
+  .stage-wrap{padding:8px 12px}
+  .visitor{display:none}
+}

@@ -8,6 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { ZONES, TIERS, GOAL, PANELS, KEEPOUTS, PROBE, askTotal, tally, buildZones, isPriced }
   from '../zones.js';
 import { PLACEMENTS } from '../placements.js';
@@ -22,10 +23,10 @@ const TIER_PRICE = { XXL: 12000, XL: 6000, L: 3000, M: 1500, S: 800, XS: 250 };
 const PANEL_PLAN = {
   hood:  { XXL: 1, XL: 1, L: 2, M: 3, S: 4,  total: 11 },
   roof:  {          XL: 1, L: 2, M: 4, S: 5,  total: 12 },
-  left:  {          XL: 1, L: 2, M: 5, S: 13, XS: 3, total: 24 },
-  right: {          XL: 1, L: 2, M: 5, S: 13, XS: 3, total: 24 },
+  left:  {          XL: 1, L: 2, M: 5, S: 13, total: 21 },
+  right: {          XL: 1, L: 2, M: 5, S: 13, total: 21 },
   rear:  {                 L: 2, M: 4, S: 8,  total: 14 },
-  front: {                       M: 1, S: 2,  total: 3  },
+  front: {                       M: 1, S: 2,  XS: 6, total: 9 },
   // The badge band and the diffuser are 8cm and 5cm tall. Nothing that is not a stripe fits
   // them, so nothing is sold there — that is why the rear is fourteen and not more.
 };
@@ -129,14 +130,15 @@ test('a zone is read the right way round from wherever you look at it', () => {
 
 test('the nose carries three zones, the same size as the rest of the car', () => {
   const front = ZONES.filter(z => z.panel === 'front');
-  assert.equal(front.length, 3,
+  const full = front.filter(z => z.tier !== 'XS');
+  assert.equal(full.length, 3,
     'the strip between the plate and the headlights is 14cm tall and 90cm wide — three ' +
     'full-size zones fit it. More only fit by shrinking them, which is what looked wrong.');
-  assert.deepEqual(front.map(z => z.tier), ['S', 'M', 'S']);
+  assert.deepEqual(full.map(z => z.tier), ['S', 'M', 'S']);
 
   // "The same size as the rest" is the actual requirement, so measure it rather than assume it.
   const areaOf = z => z.w * z.h;
-  for (const tier of ['S', 'M']) {
+  for (const tier of ['S', 'M']) {          // XS is its own thing and lives out at the corners
     const here = ZONES.filter(z => z.panel === 'front' && z.tier === tier).map(areaOf);
     const elsewhere = ZONES.filter(z => z.panel !== 'front' && z.tier === tier).map(areaOf);
     const lo = Math.min(...elsewhere), hi = Math.max(...elsewhere);
@@ -146,7 +148,7 @@ test('the nose carries three zones, the same size as the rest of the car', () =>
         `${Math.round(lo * 1e4)}–${Math.round(hi * 1e4)}cm². It has to look like the others.`);
     }
   }
-  for (const z of front) assert.ok(z.w / z.h < 2.2, `${z.id} is ${z.wCm}cm — too long and thin`);
+  for (const z of full) assert.ok(z.w / z.h < 2.2, `${z.id} is ${z.wCm}cm — too long and thin`);
 });
 
 test('every zone declares a real probe and a positive footprint', () => {
@@ -286,4 +288,21 @@ test('buildZones is pure — calling it twice gives the same map', () => {
   assert.deepEqual(a, b);
   assert.deepEqual(a, ZONES);
   assert.equal(askTotal(a), GOAL);
+});
+
+test('the filter pills on the page show the real counts', () => {
+  // These were hand-typed once and were wrong within a day of the map moving. A stale count
+  // on a live board is a small lie, so check the page against the data.
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const { byPanel, byTier } = tally();
+  for (const [panel, v] of Object.entries(byPanel)) {
+    const m = new RegExp(`data-panel="${panel}"[^>]*>[^<]*<i>(\\d+)</i>`).exec(html);
+    assert.ok(m, `no pill on the page for ${panel}`);
+    assert.equal(Number(m[1]), v.total, `${panel} pill says ${m[1]}, the map has ${v.total}`);
+  }
+  for (const [tier, n] of Object.entries(byTier)) {
+    const m = new RegExp(`data-tier="${tier}"[^>]*>[^<]*<i>(\\d+)</i>`).exec(html);
+    assert.ok(m, `no pill on the page for ${tier}`);
+    assert.equal(Number(m[1]), n, `${tier} pill says ${m[1]}, the map has ${n}`);
+  }
 });

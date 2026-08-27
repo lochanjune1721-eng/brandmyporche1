@@ -40,7 +40,7 @@ let scene, camera, renderer, controls, stageEl, modelRoot, carMeshes = [];
 let raycaster, pointer, atlas, panels = new Map(), zoneState = new Map();
 let onZoneClick, hoveredId = null, activePanel = 'all', cameraDirty = true;
 let autoSpin = true, spinT = 0, spinStarted = false;
-let basePixelRatio = 1, pixelScale = 1, frameAvg = 16, frameSamples = 0;
+let basePixelRatio = 1, pixelScale = 1, frameAvg = 16, frameSamples = 0, baseTargetY = 0.66;
 const logoDecals = new Map();
 const clock = new THREE.Clock();
 const scratchA = new THREE.Vector3(), scratchB = new THREE.Vector3();
@@ -52,19 +52,26 @@ export function initViewer(stage, cfg, clickCb) {
   const mobile = isMobile();
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0B0E14);
-  scene.fog = new THREE.Fog(0x0B0E14, 9, 20);
+  // No background of its own: the canvas is transparent and the page shows through, so the car
+  // sits on the site rather than in a black box cut out of it.
 
-  camera = new THREE.PerspectiveCamera(42, stage.clientWidth / stage.clientHeight, 0.1, 60);
+  camera = new THREE.PerspectiveCamera(38, stage.clientWidth / stage.clientHeight, 0.1, 60);
   camera.position.set(...VIEWS.hero.pos);      // land on the whole car, not on a detail
 
-  renderer = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: mobile ? 'low-power' : 'high-performance' });
-  basePixelRatio = Math.min(devicePixelRatio, mobile ? 1 : 2);   // fragments are the phone's ceiling
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: mobile ? 'low-power' : 'high-performance',
+  });
+  renderer.setClearAlpha(0);
+  // A phone's screen is 3x. Rendering at 1x is what made the car look soft; 2x is sharp, and
+  // pacePixels() walks it back down if the frame budget cannot hold it.
+  basePixelRatio = Math.min(devicePixelRatio, 2);
   renderer.setPixelRatio(basePixelRatio);
   renderer.setSize(stage.clientWidth, stage.clientHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.95;
   // No shadow map. A real one means drawing the whole 650k-triangle car a second time every
   // frame, which is exactly the budget a mid-range phone does not have. A painted contact
   // shadow costs one quad and, in a dark studio, reads the same.
@@ -72,17 +79,16 @@ export function initViewer(stage, cfg, clickCb) {
   stage.prepend(renderer.domElement);
 
   scene.environment = studioEnvironment(renderer);
-  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a1d26, 0.55));
-  const key = new THREE.DirectionalLight(0xffffff, 1.35); key.position.set(4.5, 7.5, 4.5); scene.add(key);
-  const rim = new THREE.DirectionalLight(0xE8FF4A, 0.7); rim.position.set(-5.5, 2.2, -5); scene.add(rim);
-  const fill = new THREE.DirectionalLight(0x9fb4ff, 0.45); fill.position.set(-3.5, 3, 4); scene.add(fill);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xc9c5bd, 0.5));
+  const key = new THREE.DirectionalLight(0xffffff, 1.15); key.position.set(4.5, 7.5, 4.5); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-4.5, 3, 4); scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.7); rim.position.set(-5.5, 2.2, -5); scene.add(rim);
 
+  // The car needs to sit on something or it floats. One soft ellipse, no grid.
   const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(6.4, 3.4),
-    new THREE.MeshBasicMaterial({ map: contactShadowTexture(), transparent: true, depthWrite: false, opacity: 0.72 }));
+    new THREE.PlaneGeometry(7.0, 3.6),
+    new THREE.MeshBasicMaterial({ map: contactShadowTexture(), transparent: true, depthWrite: false, opacity: 0.5 }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.004; shadow.renderOrder = 1; scene.add(shadow);
-  const grid = new THREE.GridHelper(24, 24, 0x2b3040, 0x1a1e28);
-  grid.position.y = 0.001; scene.add(grid);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.07;
@@ -90,6 +96,7 @@ export function initViewer(stage, cfg, clickCb) {
   controls.minDistance = 1.4; controls.maxDistance = 8;
   controls.maxPolarAngle = Math.PI / 2 - 0.05;
   controls.target.set(...VIEWS.hero.target);
+  baseTargetY = VIEWS.hero.target[1];
   controls.addEventListener('start', () => { autoSpin = false; });
   controls.addEventListener('change', () => { cameraDirty = true; });
 
@@ -106,8 +113,10 @@ export function initViewer(stage, cfg, clickCb) {
 
   for (const z of ZONES) zoneState.set(z.id, { zone: z, mode: 'full', opacity: 1, sold: false, screenPx: 0 });
 
+  fitLens();
   bindPointer(renderer.domElement);
   addEventListener('resize', resize);
+  addEventListener('orientationchange', () => setTimeout(resize, 250));
 
   const loader = new GLTFLoader();
   const status = t => { const el = document.getElementById('model-status'); if (el) el.textContent = t; };
@@ -123,7 +132,7 @@ export function initViewer(stage, cfg, clickCb) {
       if (o.material?.name === NORMALISE.groundMaterial) { o.visible = false; return; }  // its own shadow plane
       for (const m of [o.material].flat()) {
         if (!m) continue;
-        m.envMapIntensity = 1.55;
+        m.envMapIntensity = 1.15;
         if (/paint|coat|silver/.test(m.name || '')) { m.roughness = Math.min(m.roughness ?? 1, 0.26); m.metalness = 0.88; }
       }
       carMeshes.push(o);
@@ -229,8 +238,8 @@ function studioEnvironment(rend) {
   c.width = 512; c.height = 256;
   const g = c.getContext('2d');
   const sky = g.createLinearGradient(0, 0, 0, 256);
-  sky.addColorStop(0, '#dfe6f5'); sky.addColorStop(0.45, '#5c6577');
-  sky.addColorStop(0.52, '#20242e'); sky.addColorStop(1, '#080a0e');
+  sky.addColorStop(0, '#f4f6fa'); sky.addColorStop(0.40, '#c9ced8');
+  sky.addColorStop(0.52, '#6f757f'); sky.addColorStop(1, '#2e3138');
   g.fillStyle = sky; g.fillRect(0, 0, 512, 256);
   for (const [cx, w, a] of [[130, 130, 1], [370, 96, 0.75]]) {   // key softbox, then a colder fill
     const box = g.createRadialGradient(cx, 66, 4, cx, 66, w);
@@ -252,10 +261,10 @@ function contactShadowTexture() {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
   const g = c.getContext('2d');
-  const r = g.createRadialGradient(128, 128, 8, 128, 128, 126);
-  r.addColorStop(0, 'rgba(0,0,0,0.86)');
-  r.addColorStop(0.45, 'rgba(0,0,0,0.5)');
-  r.addColorStop(1, 'rgba(0,0,0,0)');
+  const r = g.createRadialGradient(128, 128, 6, 128, 128, 126);
+  r.addColorStop(0, 'rgba(20,20,24,0.60)');
+  r.addColorStop(0.42, 'rgba(20,20,24,0.30)');
+  r.addColorStop(1, 'rgba(20,20,24,0)');
   g.fillStyle = r; g.fillRect(0, 0, 256, 256);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -423,7 +432,7 @@ async function buildZoneDecals(atlasTex, onProgress) {
         vec4 t = texture2D(map, vUv);
         float a = t.a * vOpacity;
         if (a < 0.006) discard;
-        float lam = 0.6 + 0.4 * max(dot(normalize(vN), lightDir), 0.0);
+        float lam = 0.72 + 0.28 * max(dot(normalize(vN), lightDir), 0.0);
         gl_FragColor = vec4(t.rgb * lam, a);
       }`,
     transparent: true,
@@ -627,10 +636,25 @@ function debugPick(e) {
               (picked.id ? `  (inside ${picked.id})` : ''));
 }
 
+/** Frame for the shape of the screen. A 38° vertical field of view on a tall narrow phone
+ *  leaves almost no horizontal room, which is how a 4.5m car ends up invisible. Widen the
+ *  lens as the viewport narrows so the whole car is in shot on any device. */
+function fitLens() {
+  const aspect = stageEl.clientWidth / stageEl.clientHeight;
+  camera.aspect = aspect;
+  camera.fov = aspect >= 1.5 ? 38 : THREE.MathUtils.clamp(38 * (1.5 / Math.max(0.45, aspect)), 38, 54);
+  camera.updateProjectionMatrix();
+  // A tall frame puts the car low and leaves sky above it. Raise what the camera looks at so
+  // the car sits in the middle of the shot on a phone the way it does on a laptop.
+  if (controls) {
+    const lift = aspect >= 1.5 ? 0 : THREE.MathUtils.clamp((1.5 - aspect) * 0.34, 0, 0.34);
+    controls.target.y = baseTargetY + lift;
+  }
+}
+
 function resize() {
   if (!stageEl) return;
-  camera.aspect = stageEl.clientWidth / stageEl.clientHeight;
-  camera.updateProjectionMatrix();
+  fitLens();
   renderer.setSize(stageEl.clientWidth, stageEl.clientHeight);
   cameraDirty = true;
 }
@@ -695,6 +719,7 @@ const FLY_MS = 560;
 let flyToken = 0;
 function flyTo(p1, t1) {
   autoSpin = false;
+  baseTargetY = t1.y;
   const token = ++flyToken;
   const p0 = camera.position.clone(), t0 = controls.target.clone();
   const start = performance.now();

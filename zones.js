@@ -143,13 +143,6 @@ const ROWS = [
     { id: 'LF20', tier: 'M', u:  0.32, w: 0.26 },
     { id: 'LF21', tier: 'M', u:  0.68, w: 0.26 },
   ]},
-  // The rocker crowns about 3cm across its height. A sticker does not care; a 24cm plate would
-  // sit on it badly. So this band carries the $250 row and nothing larger.
-  { panel: 'left', probe: 'left', v: 0.255, h: 0.07, name: 'Left — the $250 row', zones: [
-    { id: 'LF22', tier: 'XS', u: 0.30, w: 0.08 },
-    { id: 'LF23', tier: 'XS', u: 0.44, w: 0.08 },
-    { id: 'LF24', tier: 'XS', u: 0.58, w: 0.08 },
-  ]},
 
   // ── REAR, 14 ── read from behind, so the engine lid is probed with `deck` rather than
   // `down`: same ray, but left and right the way a person standing behind the car sees them.
@@ -185,6 +178,16 @@ const ROWS = [
     { id: 'P1', tier: 'S', u: -0.30, w: 0.22 },
     { id: 'P2', tier: 'M', u:  0.00, w: 0.28 },
     { id: 'P3', tier: 'S', u:  0.30, w: 0.22 },
+  ]},
+  // The $250 row. It used to sit on the rocker, which crowns 3cm across its height and made
+  // these three look bent; out here the bumper is flat between the fog lens and the headlight.
+  { panel: 'front', probe: 'front', v: 0.542, h: 0.07, name: 'Front — the $250 row', zones: [
+    { id: 'P4', tier: 'XS', u: -0.80, w: 0.08 },
+    { id: 'P5', tier: 'XS', u: -0.69, w: 0.08 },
+    { id: 'P6', tier: 'XS', u: -0.58, w: 0.08 },
+    { id: 'P7', tier: 'XS', u:  0.58, w: 0.08 },
+    { id: 'P8', tier: 'XS', u:  0.69, w: 0.08 },
+    { id: 'P9', tier: 'XS', u:  0.80, w: 0.08 },
   ]},
 ];
 
