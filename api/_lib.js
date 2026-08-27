@@ -83,7 +83,10 @@ export async function uploadArtwork(purchaseId, dataUrl) {
 export const paypalMode = () => /^(live|production|prod)$/i.test(env('PAYPAL_ENV')) ? 'live' : 'sandbox';
 
 export const paypalBase = () =>
-  paypalMode() === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+  // PAYPAL_API_BASE points the whole integration at a stand-in, which is how the checkout is
+  // exercised end to end without touching PayPal. Never set it in production.
+  env('PAYPAL_API_BASE') ||
+  (paypalMode() === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com');
 
 // Keyed by environment and client id: flipping PAYPAL_ENV must not reuse a token minted
 // against the other environment.
@@ -93,7 +96,8 @@ let tokenCache = { value: '', expires: 0, key: '' };
 export async function tryPaypalToken(mode) {
   const id = env('PAYPAL_CLIENT_ID'), secret = env('PAYPAL_CLIENT_SECRET');
   if (!id || !secret) return { ok: false, why: 'PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not set' };
-  const base = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+  const base = env('PAYPAL_API_BASE') ||
+    (mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com');
   const res = await fetch(`${base}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
