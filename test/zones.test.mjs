@@ -16,13 +16,16 @@ import { frameFrom, planeNormal, v as V } from '../zone-frame.js';
 // The distribution the whole thing is designed around.
 const TIER_COUNT = { XXL: 1, XL: 4, L: 10, M: 22, S: 45, XS: 6 };
 const TIER_PRICE = { XXL: 12000, XL: 6000, L: 3000, M: 1500, S: 800, XS: 250 };
+// Where the 88 sit. The tier counts above are the $135,000 and never move; this is only how
+// they are spread, and it follows the bodywork. The nose carries five zones because five is
+// what fits there without looking like damage — the XS row moved to the sills instead.
 const PANEL_PLAN = {
   hood:  { XXL: 1, XL: 1, L: 2, M: 3, S: 4,  total: 11 },
-  roof:  {          XL: 1, L: 2, M: 4, S: 3,  total: 10 },
-  left:  {          XL: 1, L: 2, M: 5, S: 12, total: 20 },
-  right: {          XL: 1, L: 2, M: 5, S: 12, total: 20 },
+  roof:  {          XL: 1, L: 2, M: 4, S: 5,  total: 12 },
+  left:  {          XL: 1, L: 2, M: 5, S: 12, XS: 3, total: 23 },
+  right: {          XL: 1, L: 2, M: 5, S: 12, XS: 3, total: 23 },
   rear:  {                 L: 2, M: 4, S: 8,  total: 14 },
-  front: {                       M: 1, S: 6,  XS: 6, total: 13 },
+  front: {                       M: 1, S: 4,  total: 5  },
 };
 
 // ── the money ────────────────────────────────────────────────────────────────
@@ -87,8 +90,8 @@ test('each panel carries exactly the zones it is planned to', () => {
 test('the flanks mirror each other exactly', () => {
   const left = ZONES.filter(z => z.panel === 'left');
   const right = ZONES.filter(z => z.panel === 'right');
-  assert.equal(left.length, 20);
-  assert.equal(right.length, 20);
+  assert.equal(left.length, PANEL_PLAN.left.total);
+  assert.equal(right.length, PANEL_PLAN.right.total);
   left.forEach((l, i) => {
     const r = right[i];
     assert.equal(r.id, 'R' + l.id.slice(1), 'mirrored id');
@@ -98,6 +101,16 @@ test('the flanks mirror each other exactly', () => {
     assert.equal(r.w, l.w);
     assert.equal(r.h, l.h);
   });
+});
+
+test('the nose carries five zones, not a crowd', () => {
+  const front = ZONES.filter(z => z.panel === 'front');
+  assert.equal(front.length, 5, 'the front strip is 9cm tall — more than five reads as damage');
+  assert.deepEqual(front.map(z => z.tier), ['S', 'S', 'M', 'S', 'S']);
+  for (const z of front) {
+    assert.ok(z.w / z.h < 2, `${z.id} is ${z.wCm}cm — too long and thin for the nose`);
+    assert.ok(z.w >= 0.15, `${z.id} is only ${z.wCm}cm — too small to be worth buying`);
+  }
 });
 
 test('every zone declares a real probe and a positive footprint', () => {
@@ -119,9 +132,14 @@ test('within a row every zone shares the same line and height — rows read squa
   for (const [key, list] of rows) {
     const [first] = list;
     for (const z of list) {
-      assert.equal(z.v, first.v, `${z.id} sits off ${key}'s line`);
-      assert.equal(z.h, first.h, `${z.id} is a different height from the rest of ${key}`);
       assert.equal(z.probe, first.probe, `${z.id} is probed differently from the rest of ${key}`);
+      // A row shares one line and one height, so it reads as a row. One deliberate exception:
+      // a lead zone may be cut taller, and then it must stay centred on the same band.
+      const taller = z.h !== first.h;
+      if (!taller) assert.equal(z.v, first.v, `${z.id} sits off ${key}'s line`);
+      else assert.ok(Math.abs((z.v + z.h / 2) - (first.v + first.h / 2)) < 0.04
+                  || Math.abs(z.v - first.v) < 0.04,
+        `${z.id} is a different height from ${key} and is not centred on the same band`);
     }
   }
 });
@@ -204,7 +222,7 @@ test('no zone crosses a keep-out — plate, handle, arch, light, grille or shut 
 test('glass zones are declared, and only where there is glass', () => {
   const onGlass = ZONES.filter(z => z.on.includes('glass')).map(z => z.id).sort();
   assert.deepEqual(onGlass,
-    ['LF1', 'LF2', 'LF3', 'R10', 'R8', 'R9', 'RF1', 'RF2', 'RF3'].sort());
+    ['LF1', 'LF2', 'LF3', 'RF1', 'RF2', 'RF3', 'R8', 'R9', 'R10', 'R11', 'R12'].sort());
 });
 
 // ── the maths of the frame itself ────────────────────────────────────────────

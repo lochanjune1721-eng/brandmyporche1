@@ -98,9 +98,11 @@ const ROWS = [
   { panel: 'roof', probe: 'down', v: -0.81, h: 0.18, name: 'Roof — second hero', zones: [
     { id: 'R7',  tier: 'L',   u:  0.00, w: 0.80 },
   ]},
-  { panel: 'roof', probe: 'down', v: -1.24, h: 0.15, on: 'rear glass', name: 'Roof — rear pair', zones: [
-    { id: 'R8',  tier: 'S',   u: -0.20, w: 0.30 },
-    { id: 'R9',  tier: 'S',   u:  0.20, w: 0.30 },
+  { panel: 'roof', probe: 'down', v: -1.24, h: 0.15, on: 'rear glass', name: 'Roof — rear glass row', zones: [
+    { id: 'R8',  tier: 'S',   u: -0.30, w: 0.16 },
+    { id: 'R9',  tier: 'S',   u: -0.10, w: 0.16 },
+    { id: 'R11', tier: 'S',   u:  0.10, w: 0.16 },
+    { id: 'R12', tier: 'S',   u:  0.30, w: 0.16 },
   ]},
   { panel: 'roof', probe: 'down', v: -1.46, h: 0.12, on: 'rear glass', name: 'Roof — spine strip', zones: [
     { id: 'R10', tier: 'S',   u:  0.00, w: 0.56 },
@@ -134,7 +136,12 @@ const ROWS = [
     { id: 'LF16', tier: 'S',  u:  0.34, w: 0.24 },
     { id: 'LF17', tier: 'M',  u:  0.66, w: 0.30 },
   ]},
-  { panel: 'left', probe: 'left', v: 0.29, h: 0.09, name: 'Left — rocker band', zones: [
+  { panel: 'left', probe: 'left', v: 0.205, h: 0.045, name: 'Left — the $250 cluster', zones: [
+    { id: 'LF21', tier: 'XS', u: 0.28, w: 0.062 },
+    { id: 'LF22', tier: 'XS', u: 0.38, w: 0.062 },
+    { id: 'LF23', tier: 'XS', u: 0.48, w: 0.062 },
+  ]},
+  { panel: 'left', probe: 'left', v: 0.30, h: 0.09, name: 'Left — rocker band', zones: [
     { id: 'LF18', tier: 'S',  u: -0.75, w: 0.28 },
     { id: 'LF19', tier: 'S',  u: -0.06, w: 0.44 },
     { id: 'LF20', tier: 'S',  u:  0.56, w: 0.44 },
@@ -175,22 +182,16 @@ const ROWS = [
   // y 0.59, the fog lenses at |x| 0.51. Long thin zones fit that strip but read as a smear on
   // the car, so these are cut short and square instead — smaller, but they look like something
   // you would buy. Sizes here are the strip's, not the door's; the price is for the position.
-  { panel: 'front', probe: 'front', v: 0.549, h: 0.076, name: 'Front — contingency band', zones: [
-    { id: 'P1', tier: 'S', u: -0.615, w: 0.095 },
-    { id: 'P2', tier: 'S', u: -0.435, w: 0.095 },
-    { id: 'P3', tier: 'S', u: -0.255, w: 0.095 },
-    { id: 'P4', tier: 'M', u:  0.000, w: 0.130 },
-    { id: 'P5', tier: 'S', u:  0.255, w: 0.095 },
-    { id: 'P6', tier: 'S', u:  0.435, w: 0.095 },
-    { id: 'P7', tier: 'S', u:  0.615, w: 0.095 },
-  ]},
-  { panel: 'front', probe: 'front', v: 0.475, h: 0.048, name: 'Front — the $250 row', zones: [
-    { id: 'P8',  tier: 'XS', u: -0.230, w: 0.062 },
-    { id: 'P9',  tier: 'XS', u: -0.138, w: 0.062 },
-    { id: 'P10', tier: 'XS', u: -0.046, w: 0.062 },
-    { id: 'P11', tier: 'XS', u:  0.046, w: 0.062 },
-    { id: 'P12', tier: 'XS', u:  0.138, w: 0.062 },
-    { id: 'P13', tier: 'XS', u:  0.230, w: 0.062 },
+  // Five zones, and that is the lot. The strip across the nose is 9cm tall out at the corners
+  // and 14cm in the middle, so the centre M is cut taller than its neighbours — deliberately,
+  // the way a lead sponsor sits on a race car. Thirteen zones in here looked like damage;
+  // five look like inventory.
+  { panel: 'front', probe: 'front', v: 0.545, h: 0.088, name: 'Front — the nose', zones: [
+    { id: 'P1', tier: 'S', u: -0.60, w: 0.16 },
+    { id: 'P2', tier: 'S', u: -0.30, w: 0.16 },
+    { id: 'P3', tier: 'M', u:  0.00, w: 0.22, h: 0.128, v: 0.527 },
+    { id: 'P4', tier: 'S', u:  0.30, w: 0.16 },
+    { id: 'P5', tier: 'S', u:  0.60, w: 0.16 },
   ]},
 ];
 
@@ -258,6 +259,7 @@ export function buildZones() {
       const tier = TIERS[z.tier];
       if (!tier) throw new Error(`zone ${z.id}: unknown tier ${z.tier}`);
       const h = z.h ?? row.h;
+      const v = z.v ?? row.v;
       out.push({
         n: ++n,
         id: z.id,
@@ -267,13 +269,13 @@ export function buildZones() {
         price: tier.price,
         priced: isPriced(z.tier),
         probe: row.probe,
-        u: z.u, v: row.v,
+        u: z.u, v,
         w: z.w, h,
         wCm: `${Math.round(z.w * 100)}×${Math.round(h * 100)}`,
         name: `${z.id} · ${PANEL_LABEL[row.panel]} ${z.tier}`,
         on: row.on || 'bodywork',
         // world anchor before the viewer snaps it to the mesh — a starting point, not a value
-        anchor: PROBE[row.probe].origin(z.u, row.v).map(round2),
+        anchor: PROBE[row.probe].origin(z.u, v).map(round2),
       });
     }
   }
