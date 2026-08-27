@@ -1,7 +1,7 @@
-// zones.js — the map. 88 surface-conformed ad zones on a Porsche 911.
+// zones.js — the map. 82 surface-conformed ad zones on a Porsche 911.
 //
-// THE ECONOMICS. 82 priced zones sum to exactly $135,000 — the price of the car.
-// The 6 XS zones are $250 each and sit OUTSIDE that maths: they pay running costs.
+// THE ECONOMICS. All 82 zones sum to exactly $135,000 — the price of the car. There is no
+// side pot and no zone that doesn't count: every one of them buys a piece of it.
 // `test/zones.test.mjs` asserts every number below. Break one, the suite goes red.
 //
 // COORDINATES. One world unit = one metre, on the model as the viewer normalises it:
@@ -27,14 +27,10 @@ export const TIERS = {
   L:   { price: 3000,  count: 10, label: 'L'   },
   M:   { price: 1500,  count: 22, label: 'M'   },
   S:   { price: 800,   count: 45, label: 'S'   },
-  XS:  { price: 250,   count: 6,  label: 'XS'  },   // on-ramp — outside the $135,000
 };
 
-/** The car fund. Every priced zone at ask adds up to this and nothing else does. */
+/** The car fund. Every zone at ask adds up to this and nothing else does. */
 export const GOAL = 135000;
-
-/** XS money is ring-fenced for running costs, so it never counts toward the goal. */
-export const isPriced = tier => tier !== 'XS';
 
 export const PANELS = ['hood', 'roof', 'left', 'right', 'rear', 'front'];
 
@@ -60,7 +56,7 @@ export const PROBE = {
 
 // Rows read outer-to-inner, or nose-to-tail, in the order they appear in a panel view.
 // `v` is the row's line; `h` its on-surface height. Every zone in a row shares both, which
-// is what stops 88 zones reading as a wall of dashes — one misaligned zone ruins the grid.
+// is what stops 82 zones reading as a wall of dashes — one misaligned zone ruins the grid.
 // Rows carry a `probe` and, where the surface is not the panel's usual one, an `on` note.
 const ROWS = [
 
@@ -171,23 +167,15 @@ const ROWS = [
     { id: 'B14', tier: 'M', u:  0.78, w: 0.20 },
   ]},
 
-  // ── FRONT, 3 ── the plate caps this strip at y 0.445 and the headlights at 0.59, and at
+  // ── FRONT, 3 ── there were nine here. The other six were 8×7cm, out past the fog lenses,
+  // and at any honest camera distance they read as specks of dirt rather than as inventory.
+  // Small enough to be unsellable is small enough to delete. The plate caps this strip at y 0.445 and the headlights at 0.59, and at
   // that height the fog lenses cap the width at |x| 0.47: 14cm by 90cm. Three full-size zones
   // fit it with room between them. A fourth only fits by shrinking them.
   { panel: 'front', probe: 'front', v: 0.518, h: 0.135, name: 'Front — the nose', zones: [
     { id: 'P1', tier: 'S', u: -0.30, w: 0.22 },
     { id: 'P2', tier: 'M', u:  0.00, w: 0.28 },
     { id: 'P3', tier: 'S', u:  0.30, w: 0.22 },
-  ]},
-  // The $250 row. It used to sit on the rocker, which crowns 3cm across its height and made
-  // these three look bent; out here the bumper is flat between the fog lens and the headlight.
-  { panel: 'front', probe: 'front', v: 0.542, h: 0.07, name: 'Front — the $250 row', zones: [
-    { id: 'P4', tier: 'XS', u: -0.80, w: 0.08 },
-    { id: 'P5', tier: 'XS', u: -0.69, w: 0.08 },
-    { id: 'P6', tier: 'XS', u: -0.58, w: 0.08 },
-    { id: 'P7', tier: 'XS', u:  0.58, w: 0.08 },
-    { id: 'P8', tier: 'XS', u:  0.69, w: 0.08 },
-    { id: 'P9', tier: 'XS', u:  0.80, w: 0.08 },
   ]},
 ];
 
@@ -245,7 +233,7 @@ export const KEEPOUTS = [
 
 const round2 = n => Math.round(n * 100) / 100;
 
-/** Expand the row table into the flat 88-zone list the app and the viewer both consume. */
+/** Expand the row table into the flat 82-zone list the app and the viewer both consume. */
 export function buildZones() {
   const rows = mirrorFlank(ROWS);
   const out = [];
@@ -263,7 +251,6 @@ export function buildZones() {
         row: row.name,
         tier: z.tier,
         price: tier.price,
-        priced: isPriced(z.tier),
         probe: row.probe,
         u: z.u, v,
         w: z.w, h,
@@ -280,9 +267,9 @@ export function buildZones() {
 
 export const ZONES = buildZones();
 
-/** Sum of every priced zone at ask. Must be GOAL. */
+/** Sum of every zone at ask. Must be GOAL. */
 export function askTotal(zones = ZONES) {
-  return zones.filter(z => z.priced).reduce((a, z) => a + z.price, 0);
+  return zones.reduce((a, z) => a + z.price, 0);
 }
 
 /** Per-panel and per-tier tallies, for the table headers and the media kit. */
@@ -291,7 +278,7 @@ export function tally(zones = ZONES) {
   for (const z of zones) {
     (byPanel[z.panel] ||= { total: 0, ask: 0 });
     byPanel[z.panel].total++;
-    if (z.priced) byPanel[z.panel].ask += z.price;
+    byPanel[z.panel].ask += z.price;
     byPanel[z.panel][z.tier] = (byPanel[z.panel][z.tier] || 0) + 1;
     byTier[z.tier] = (byTier[z.tier] || 0) + 1;
   }

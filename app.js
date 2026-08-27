@@ -27,7 +27,7 @@ const fmt = cents => currency + Math.round(cents / 100 * RATE[currency]).toLocal
 const chargeFmt = cents => '$' + (cents / 100).toLocaleString('en-US');
 
 const raisedCents = () => [...sold.keys()]
-  .reduce((a, id) => a + (zoneById.get(id)?.priced ? zoneById.get(id).price * 100 : 0), 0);
+  .reduce((a, id) => a + (zoneById.get(id)?.price ?? 0) * 100, 0);
 const closed = () => Date.now() >= new Date(CONFIG.endsAt).getTime();
 const stateOf = id => sold.has(id) ? 'sold' : held.has(id) ? 'held' : 'open';
 
@@ -68,10 +68,9 @@ export function initApp() {
 /** The one number the whole site rests on. If this ever fails, say so loudly rather than
  *  quietly selling a car that does not add up. */
 function assertTheMaths() {
-  const priced = ZONES.filter(z => z.priced);
-  if (ZONES.length !== 88 || priced.length !== 82 || askTotal() !== GOAL) {
-    const msg = `Zone map does not add up: ${ZONES.length} zones, ${priced.length} priced, ` +
-                `$${askTotal().toLocaleString()} (expected 88 / 82 / $${GOAL.toLocaleString()}).`;
+  if (ZONES.length !== 82 || askTotal() !== GOAL) {
+    const msg = `Zone map does not add up: ${ZONES.length} zones at ` +
+                `$${askTotal().toLocaleString()} (expected 82 / $${GOAL.toLocaleString()}).`;
     console.error(msg);
     banner(msg, 'bad');
   }
@@ -127,14 +126,14 @@ function renderMeter() {
   const pct = Math.round(raised / goalCents * 100);
   $('raised').textContent = fmt(raised);
   $('goal-label').textContent = 'of ' + fmt(goalCents);
-  $('spots-taken').textContent = `${sold.size} of 88 zones taken`;
+  $('spots-taken').textContent = `${sold.size} of 82 zones taken`;
   $('meter-pct').textContent = pct + '% of the car';
   const bar = $('bar');
   bar.style.width = Math.min(100, Math.max(raised > 0 ? 2 : 0, pct)) + '%';
   bar.classList.toggle('over', raised >= goalCents);
   $('goal-over').hidden = raised < goalCents;
   $('goal-over').textContent = `· paid for · ${pct}%`;
-  $('sticky-taken').textContent = `${sold.size} of 88 zones taken`;
+  $('sticky-taken').textContent = `${sold.size} of 82 zones taken`;
   $('sticky-raised').textContent = `${fmt(raised)} of ${fmt(goalCents)}`;
 }
 
@@ -149,8 +148,8 @@ function renderCountdown() {
   const left = Math.max(0, new Date(CONFIG.endsAt).getTime() - Date.now());
   $('hero-countdown').textContent = fmtLeft(left);
   $('auction-meta').textContent = closed()
-    ? `Closed · ${sold.size} of 88 zones sold`
-    : `${sold.size} of 88 zones taken · ${88 - sold.size} still open`;
+    ? `Closed · ${sold.size} of 82 zones sold`
+    : `${sold.size} of 82 zones taken · ${82 - sold.size} still open`;
 }
 
 function renderTable() {
@@ -177,7 +176,7 @@ function renderTable() {
     if (!list) continue;
     const all = ZONES.filter(z => z.panel === panel);
     const taken = all.filter(z => sold.has(z.id)).length;
-    const raised = all.reduce((a, z) => a + (sold.has(z.id) && z.priced ? z.price * 100 : 0), 0);
+    const raised = all.reduce((a, z) => a + (sold.has(z.id) ? z.price * 100 : 0), 0);
 
     const sec = document.createElement('details');
     sec.className = 'panel-group';
@@ -202,7 +201,7 @@ function renderTable() {
               : `${owner.artwork ? `<img src="${esc(owner.artwork)}" alt="">` : ''}<span>${esc(owner.brand)}</span>`)
           : `<span class="rowsub">${state === 'held' ? 'reserved — someone is paying' : 'open'}</span>`}</div>` +
         `<div class="bid"><b class="tabular">${fmt(z.price * 100)}</b>` +
-        `<small>${z.priced ? 'buys the car' : 'running costs'}</small></div>` +
+        `<small>buys the car</small></div>` +
         `<div class="rowact">${
           state === 'sold' ? '<span class="tag-sold">Sold</span>'
           : state === 'held' ? '<span class="tag-held">Reserved</span>'
@@ -275,9 +274,7 @@ function openBuy(id) {
   $('modal-title').textContent = `${TIERS[z.tier].label} — ${z.wCm} cm`;
   $('modal-meta').textContent = `${z.row}${z.on !== 'bodywork' ? ' · on ' + z.on : ''}`;
   $('modal-price').textContent = chargeFmt(z.price * 100);
-  $('modal-note').textContent = z.priced
-    ? 'This zone is part of the $135,000 that buys the car.'
-    : 'XS zones go to running costs — fuel, wrap, wash. They sit outside the $135,000.';
+  $('modal-note').textContent = 'This zone is part of the $135,000 that buys the car.';
   artwork = '';
   $('f-file').value = '';
   $('f-url').value = '';

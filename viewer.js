@@ -1,19 +1,19 @@
-// viewer.js — the car, and 88 zones painted onto it.
+// viewer.js — the car, and 82 zones painted onto it.
 //
 // Every zone is a real DecalGeometry: the bodywork is clipped against the zone's projector
 // box, so a decal wraps the curve of the panel it sits on and the car's own depth buffer
 // hides the ones on the far side. Nothing is faked with screen-space overlays.
 //
-// The hard part at 88 zones is legibility, not geometry. Four rules do that work:
+// The hard part at 82 zones is legibility, not geometry. Four rules do that work:
 //   1. panel focus   — the panel you are looking at is solid, the rest sit back at 0.52
 //   2. label decay   — a small zone drops its price, then its tier letter. Never its size.
-//   3. zoom promotes — leaning in gives a zone its detail back, which is how you find the XS row
+//   3. zoom promotes — leaning in gives a zone its detail back, which is how you read a crowded row
 //   4. hover and sold always win, whatever the other three say
 // Nothing is hover-only. Every zone shows what it is and how big it is without being touched.
 // All of it is recomputed when the camera changes, never per frame.
 //
 // Draw calls stay flat: the zones of a panel share one merged BufferGeometry and one
-// material, so 88 zones cost six draws, not 88. Detail level is a per-vertex UV rewrite into
+// material, so 82 zones cost six draws, not 82. Detail level is a per-vertex UV rewrite into
 // the label atlas; opacity is a per-vertex float. Neither rebuilds geometry.
 //
 // DEBUG_PICK: set window.DEBUG_PICK = true, then click the car to log a probe coordinate you
@@ -139,11 +139,11 @@ export function initViewer(stage, cfg, clickCb) {
     });
     scene.add(modelRoot);
     // Yield a frame so the car paints before the projection work starts, then project in
-    // batches so the page keeps answering input while 88 decals are cut.
+    // batches so the page keeps answering input while 82 decals are cut.
     requestAnimationFrame(() => requestAnimationFrame(async () => {
       const t0 = performance.now();
       await buildZoneDecals(tex, done => status(`Projecting zones ${done}/${ZONES.length}…`));
-      status(`88 zones · ${Math.round(performance.now() - t0)}ms`);
+      status(`82 zones · ${Math.round(performance.now() - t0)}ms`);
       setTimeout(() => status(''), 2600);
       cameraDirty = true;
       window.__zoneDebug = {
@@ -272,7 +272,7 @@ function contactShadowTexture() {
 }
 
 /** Pull just the triangles inside each zone's projector box out of the car.
- *  Left to itself DecalGeometry walks every vertex of the body for every decal — 88 passes
+ *  Left to itself DecalGeometry walks every vertex of the body for every decal — 82 passes
  *  over 650k triangles. One pre-transformed pass with an oriented-box test does it once. */
 function collectNeighbourhoods() {
   const started = performance.now();
@@ -661,7 +661,7 @@ function resize() {
 
 /** If frames start costing more than a 60fps budget, render fewer pixels rather than fewer
  *  zones. Recovers when the pressure comes off. This is what holds 60fps on a mid-range
- *  phone, where fragment cost — not the 88 decals — is the ceiling. */
+ *  phone, where fragment cost — not the 82 decals — is the ceiling. */
 function pacePixels(dtMs) {
   if (window.__noAdaptive) return;          // screenshot tests want a fixed resolution
   frameAvg += (dtMs - frameAvg) * 0.06;

@@ -1,15 +1,21 @@
 # Brand My 911
 
-An auction that sells the bodywork of a Porsche 911 as advertising space, one zone at a time,
-on a 3D car you can spin.
+A site that sells the bodywork of a Porsche 911 as advertising space, one zone at a time, at a
+fixed price, on a 3D car you can spin.
 
-**88 panels. $135,000. That's the car.**
+**82 panels. $135,000. That's the car.**
 
-That line is the product. 82 priced zones, at ask, add up to exactly $135,000 — the price of
-the car, not a fundraising target somebody liked the sound of. It turns the progress bar into a
+That line is the product. All 82 zones, at ask, add up to exactly $135,000 — the price of the
+car, not a fundraising target somebody liked the sound of. It turns the progress bar into a
 puzzle with a visible end, and it means no single price ever has to be defended on its own.
-Six XS zones at $250 sit deliberately *outside* that total and pay running costs: a board whose
-cheapest spot is $800 stays empty on day one, and an empty board never gets anyone to bid $6,000.
+
+There is no side pot. An earlier cut carried six 8×7cm zones at $250 across the nose, ring-fenced
+for running costs, on the theory that a board whose floor is $800 sits empty on day one. They
+came out: at any camera distance a passer-by would actually use, they read as specks of dirt on
+the bumper rather than as inventory, and their surface normals sat 45° off the bumper face because
+that corner curls. Something too small to be read is too small to be sold. Losing them costs
+$1,500 of running costs and buys back a claim that needs no asterisk — the sum of the board and
+the price of the car are now the same number.
 
 | Tier | Price | Zones | Subtotal |
 |------|------:|------:|---------:|
@@ -18,8 +24,7 @@ cheapest spot is $800 stays empty on day one, and an empty board never gets anyo
 | L    | $3,000  | 10 | $30,000 |
 | M    | $1,500  | 22 | $33,000 |
 | S    | $800    | 45 | $36,000 |
-| **82 priced** | | **82** | **$135,000** |
-| XS   | $250    | 6  | *running costs, outside the total* |
+| **Total** | | **82** | **$135,000** |
 
 ## Run it
 
@@ -44,10 +49,10 @@ node tools/build-media.mjs        # regenerate media/index.html and media/zone-m
 `zones.js` is the only place the map exists. It declares **rows** — a line across a panel, a
 height, a probe direction — and the zones sitting on that line. Everything else is derived:
 
-- `buildZones()` expands the rows into the flat 88-zone list, mirroring the left flank to the right.
+- `buildZones()` expands the rows into the flat 82-zone list, mirroring the left flank to the right.
 - `tools/build-placements.mjs` fires each zone's probe ray at `model.glb`, fits a plane across
   the zone's own footprint, and writes the result to `placements.js`. That is `DEBUG_PICK` done
-  88 times by machine, once, so no visitor pays for it.
+  82 times by machine, once, so no visitor pays for it.
 - `viewer.js` reads the baked placement, cuts a real `DecalGeometry` out of the bodywork, and
   merges every zone on a panel into one buffer.
 
@@ -66,7 +71,7 @@ bodywork, crosses a step, lands on glass it did not declare, touches a neighbour
 keep-out — the number plates, the door handles, the wheel arches, the lights, the grilles and
 the shut lines. Both checks pass today; keep them that way.
 
-## Rendering 88 zones without it turning to noise
+## Rendering 82 zones without it turning to noise
 
 The geometry is the easy half. Four rules keep the car readable, all recomputed when the camera
 changes rather than every frame:
@@ -79,7 +84,7 @@ changes rather than every frame:
    that, the centimetres alone. Nothing is hover-only: a bidder should never have to touch a
    zone, or open the media kit, to find out how big it is.
 3. **Zoom promotes.** Leaning in past 2.4m gives every zone in the focused panel one level
-   back. That is how anyone ever finds the six XS zones without them cluttering the wide shot.
+   back. That is how a crowded row stays readable without cluttering the wide shot.
 4. **Hover and sold always win.** A hovered zone jumps to full. A sold zone shows its logo at
    full opacity in every view, because sold inventory is the best advertising the board has.
 
@@ -87,7 +92,7 @@ Markers are near-black plates with a white dashed border, not translucent grey: 
 paint a grey plate disappears. A first visit lands on the whole car, turning slowly, rather
 than on a detail.
 
-Cost control: one merged `BufferGeometry` and one `ShaderMaterial` per panel, so 88 zones cost
+Cost control: one merged `BufferGeometry` and one `ShaderMaterial` per panel, so 82 zones cost
 six draw calls. Detail level is a UV rewrite into a shared label atlas; opacity is a per-vertex
 float. Neither rebuilds geometry. There is no shadow map — a real one means drawing the whole
 650k-triangle car twice per frame — and a painted contact shadow stands in. If frames still run
@@ -104,7 +109,7 @@ placements.js       where each zone lands on model.glb (generated)
 zone-frame.js       probe → surface → decal frame. shared by the viewer and the verifier
 zone-atlas.js       every label, baked into one texture
 viewer.js           three.js stage, decals, focus, decay, hover
-app.js              bids, the 88-row board, the modal
+app.js              buying, the 82-row board, the modal
 config.js           keys, dates, the things you change without touching code
 api/notify.js       outbid email (Resend)
 tools/              mesh reader, offline raycaster, generators

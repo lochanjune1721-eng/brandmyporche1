@@ -2,7 +2,7 @@
   "name": "brand-my-911",
   "private": true,
   "type": "module",
-  "description": "88 panels. $135,000. That's the car.",
+  "description": "82 panels. $135,000. That's the car.",
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "verify": "node tools/verify-zones.mjs",

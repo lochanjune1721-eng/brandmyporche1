@@ -1,6 +1,6 @@
 // tools/verify-zones.mjs — run the whole zone map against the real model.glb, offline.
 //
-// This is DEBUG_PICK done 88 times by machine. For every zone it casts the same probe ray
+// This is DEBUG_PICK done 82 times by machine. For every zone it casts the same probe ray
 // the viewer casts at load, snaps to the hit, builds the decal frame, then samples the
 // footprint on a grid and asks the questions the acceptance checks ask:
 //   • does every corner land on bodywork, or does the zone hang off an edge?

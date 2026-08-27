@@ -1,6 +1,6 @@
 // zone-atlas.js — every zone label, baked once into a single texture.
 //
-// 88 decals with their own canvas texture is 88 uploads and 88 materials. Instead every
+// 82 decals with their own canvas texture is 82 uploads and 82 materials. Instead every
 // distinct (tier, size, detail level) gets one cell in one atlas, and identical zones share
 // it. Changing a zone's detail level then costs a UV rewrite, not a canvas redraw — which is
 // the whole point, because detail level changes every time the camera moves.
@@ -16,15 +16,14 @@ const INK = 'rgba(255,255,255,0.96)';
 // Near-black, not grey. On silver paint a translucent grey plate disappears; a black one
 // reads from across the stage, which is the whole job of a zone marker.
 const FILL = 'rgba(9,10,13,0.70)';
-const FILL_HOT = 'rgba(46,52,8,0.70)';   // XS keeps a hint of the accent so the cheap row is findable
 
 /** Cell pixel height from the zone's real height, so big zones stay sharp when you zoom in
- *  and the six XS zones do not each burn a 256px row. */
+ *  and a one-off zone does not burn a 256px row of its own. */
 const cellHeight = h => Math.round(Math.min(160, Math.max(40, h * 620)));
 
 export class ZoneAtlas {
   /**
-   * @param zones   the 88-zone list
+   * @param zones   the 82-zone list
    * @param opts    { size } atlas edge in px (power of two)
    */
   constructor(zones, { size = 2048 } = {}) {
@@ -86,7 +85,7 @@ export class ZoneAtlas {
     const r = Math.min(Math.max(4, Math.round(0.022 * pxPerM)), Math.min(w, h) / 2 - lw);
     const inset = lw;
 
-    c.fillStyle = zone.tier === 'XS' ? FILL_HOT : FILL;
+    c.fillStyle = FILL;
     roundRect(c, inset, inset, w - inset * 2, h - inset * 2, Math.max(0, r - inset));
     c.fill();
 

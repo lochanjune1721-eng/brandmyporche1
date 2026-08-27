@@ -11,7 +11,7 @@ import { ZONES, TIERS, GOAL, PANELS, PANEL_LABEL, askTotal, tally } from '../zon
 import { Pdf } from './pdf.mjs';
 
 const OUT = new URL('../media/', import.meta.url).pathname;
-const TIER_ORDER = ['XXL', 'XL', 'L', 'M', 'S', 'XS'];
+const TIER_ORDER = ['XXL', 'XL', 'L', 'M', 'S'];
 const money = n => '$' + n.toLocaleString('en-US');
 const { byPanel } = tally();
 
@@ -97,7 +97,7 @@ const W = pdf.w - M * 2;
 function header(sub) {
   pdf.rect(0, 0, pdf.w, 54, { fill: 0.07 });
   pdf.text(M, 24, 'BRAND MY 911', { size: 13, bold: true, gray: 1 });
-  pdf.text(M, 40, '88 panels. $135,000. That’s the car.', { size: 9, gray: 0.75 });
+  pdf.text(M, 40, '82 panels. $135,000. That’s the car.', { size: 9, gray: 0.75 });
   pdf.text(M, 40, sub, { size: 8, gray: 0.75, align: 'right', width: W });
 }
 function footer(n) {
@@ -110,8 +110,8 @@ function footer(n) {
 header('Zone map & media kit');
 let y = 92;
 pdf.text(M, y, 'The whole pricing argument, on one line', { size: 15, bold: true }); y += 20;
-pdf.text(M, y, '82 priced zones. Every one at ask. They add up to exactly $135,000 - the price of the car,', { size: 9.5, gray: 0.25 }); y += 14;
-pdf.text(M, y, 'not a target anyone picked. Six XS zones at $250 sit outside that total and pay running costs.', { size: 9.5, gray: 0.25 }); y += 26;
+pdf.text(M, y, '82 zones. Every one at ask. They add up to exactly $135,000 - the price of the car, not a', { size: 9.5, gray: 0.25 }); y += 14;
+pdf.text(M, y, 'target anyone picked. No side pot: there is no zone on this car that does not buy a piece of it.', { size: 9.5, gray: 0.25 }); y += 26;
 
 const colW = W / 2 - 16;
 let ty = y;
@@ -123,17 +123,17 @@ for (const h of [['Tier', 0], ['Price', 60], ['Zones', 110], ['Subtotal', 155], 
 ty += 12;
 for (const t of TIER_ORDER) {
   const list = ZONES.filter(z => z.tier === t);
-  const sub = list.filter(z => z.priced).reduce((a, z) => a + z.price, 0);
+  const sub = list.reduce((a, z) => a + z.price, 0);
   const sizes = [...new Set(list.map(z => z.wCm))].sort((a, b) => parseInt(b) - parseInt(a));
   pdf.text(M, ty, t, { size: 9, bold: true });
   pdf.text(M + 60, ty, money(TIERS[t].price), { size: 8.5 });
   pdf.text(M + 110, ty, String(list.length), { size: 8.5 });
-  pdf.text(M + 155, ty, t === 'XS' ? 'n/a' : money(sub), { size: 8.5, gray: t === 'XS' ? 0.5 : 0 });
+  pdf.text(M + 155, ty, money(sub), { size: 8.5 });
   pdf.text(M + 210, ty, sizes.slice(0, 5).join(', ') + (sizes.length > 5 ? ', ...' : '') + ' cm', { size: 7, gray: 0.45 });
   ty += 14;
 }
 pdf.line(M, ty - 4, M + colW, ty - 4, { gray: 0.8 });
-pdf.text(M, ty + 9, '82 priced zones', { size: 9, bold: true });
+pdf.text(M, ty + 9, '82 zones', { size: 9, bold: true });
 pdf.text(M + 155, ty + 9, money(askTotal()), { size: 9, bold: true });
 
 let py = y;
@@ -211,10 +211,10 @@ fs.writeFileSync(OUT + 'zone-map.pdf', pdf.build());
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const tierRows = TIER_ORDER.map(t => {
   const list = ZONES.filter(z => z.tier === t);
-  const sub = list.filter(z => z.priced).reduce((a, z) => a + z.price, 0);
+  const sub = list.reduce((a, z) => a + z.price, 0);
   const sizes = [...new Set(list.map(z => z.wCm))].sort((a, b) => parseInt(b) - parseInt(a));
   return `<tr><td><span class="chip t-${t}">${t}</span></td><td class="tabular">${money(TIERS[t].price)}</td>` +
-    `<td class="tabular">${list.length}</td><td class="tabular">${t === 'XS' ? '—' : money(sub)}</td>` +
+    `<td class="tabular">${list.length}</td><td class="tabular">${money(sub)}</td>` +
     `<td class="muted">${sizes.join(' · ')} cm</td></tr>`;
 }).join('\n');
 
@@ -233,7 +233,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Media kit — Brand My 911</title>
-<meta name="description" content="Every one of the 88 zones on the car, with its real size in centimetres, artwork specification, deadlines and an honest reach statement.">
+<meta name="description" content="Every one of the 82 zones on the car, with its real size in centimetres, artwork specification, deadlines and an honest reach statement.">
 <link rel="icon" href="../index.html" >
 <link rel="stylesheet" href="../style.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -269,7 +269,7 @@ const html = `<!doctype html>
 <header class="hero">
   <p class="kicker">Media kit</p>
   <h1>Every zone,<br>to the centimetre.</h1>
-  <p class="finish-line">88 panels. $135,000. That's the car.</p>
+  <p class="finish-line">82 panels. $135,000. That's the car.</p>
   <p class="sub">Everything a designer or a print shop needs before anyone wires anything: the full
   zone map, each zone's printed size, the artwork specification, the deadline, and exactly what the
   car will and will not do for you. This page is generated from the same file the 3D car reads, so
@@ -282,14 +282,14 @@ const html = `<!doctype html>
 
 <section class="kit">
   <h2>The economics</h2>
-  <p class="muted">82 priced zones at ask sum to exactly <b>${money(GOAL)}</b>. Six XS zones at $250 sit
-  outside that total: they go to running costs — fuel, wrap, wash — and they exist because a board
-  whose cheapest spot is $800 stays empty on day one, and an empty board never gets anyone to bid $6,000.</p>
+  <p class="muted">82 zones at ask sum to exactly <b>${money(GOAL)}</b>. There is no side pot and no
+  zone that does not count: every spot on this car buys a piece of it, and the board and the invoice
+  are the same number.</p>
   <div class="scroller"><table>
     <thead><tr><th>Tier</th><th>Price</th><th>Zones</th><th>Subtotal</th><th>Sizes on the car (w × h cm)</th></tr></thead>
     <tbody>
 ${tierRows}
-      <tr><td colspan="2"><b>82 priced zones</b></td><td class="tabular"><b>82</b></td><td class="tabular"><b>${money(askTotal())}</b></td><td class="muted">the car</td></tr>
+      <tr><td colspan="2"><b>82 zones</b></td><td class="tabular"><b>82</b></td><td class="tabular"><b>${money(askTotal())}</b></td><td class="muted">the car</td></tr>
     </tbody>
   </table></div>
 
@@ -312,7 +312,7 @@ ${REACH.map(([b, s]) => `    <div class="fact"><b>${b}</b><span>${s}</span></div
 ${ARTWORK.map(([k, v]) => `    <div><b>${k}</b><span>${esc(v)}</span></div>`).join('\n')}
   </div>
 
-  <h2>All 88 zones</h2>
+  <h2>All 82 zones</h2>
   <p class="muted">Sizes are the printed decal, width × height in centimetres, measured on the panel.
   Zone ids are what goes on your file name and on the invoice.</p>
   <div class="scroller"><table>

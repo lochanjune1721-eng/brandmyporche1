@@ -2,53 +2,50 @@
 //
 //   node --test test/
 //
-// The headline claim of this site is that 82 priced zones add up to exactly $135,000. That is
-// not a slogan, it is an invariant, and if a future edit breaks it the site is lying to
-// bidders. Everything below is here so that edit goes red instead of live.
+// The headline claim of this site is that 82 zones add up to exactly $135,000. That is not a
+// slogan, it is an invariant, and if a future edit breaks it the site is lying to buyers.
+// Everything below is here so that edit goes red instead of live.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { ZONES, TIERS, GOAL, PANELS, KEEPOUTS, PROBE, askTotal, tally, buildZones, isPriced }
+import { ZONES, TIERS, GOAL, PANELS, KEEPOUTS, PROBE, askTotal, tally, buildZones }
   from '../zones.js';
 import { PLACEMENTS } from '../placements.js';
 import { frameFrom, planeNormal, v as V } from '../zone-frame.js';
 
 // The distribution the whole thing is designed around.
-const TIER_COUNT = { XXL: 1, XL: 4, L: 10, M: 22, S: 45, XS: 6 };
-const TIER_PRICE = { XXL: 12000, XL: 6000, L: 3000, M: 1500, S: 800, XS: 250 };
-// Where the 88 sit. The tier counts above are the $135,000 and never move; this is only how
-// they are spread, and it follows the bodywork. The nose carries five zones because five is
-// what fits there without looking like damage — the XS row moved to the sills instead.
+const TIER_COUNT = { XXL: 1, XL: 4, L: 10, M: 22, S: 45 };
+const TIER_PRICE = { XXL: 12000, XL: 6000, L: 3000, M: 1500, S: 800 };
+// Where the 82 sit. The tier counts above are the $135,000 and never move; this is only how
+// they are spread, and it follows the bodywork. The nose carries three because three is what
+// fits there without looking like damage.
 const PANEL_PLAN = {
   hood:  { XXL: 1, XL: 1, L: 2, M: 3, S: 4,  total: 11 },
   roof:  {          XL: 1, L: 2, M: 4, S: 5,  total: 12 },
   left:  {          XL: 1, L: 2, M: 5, S: 13, total: 21 },
   right: {          XL: 1, L: 2, M: 5, S: 13, total: 21 },
   rear:  {                 L: 2, M: 4, S: 8,  total: 14 },
-  front: {                       M: 1, S: 2,  XS: 6, total: 9 },
+  front: {                       M: 1, S: 2,  total: 3 },
   // The badge band and the diffuser are 8cm and 5cm tall. Nothing that is not a stripe fits
   // them, so nothing is sold there — that is why the rear is fourteen and not more.
 };
 
 // ── the money ────────────────────────────────────────────────────────────────
 
-test('82 priced zones sum to exactly $135,000', () => {
-  const priced = ZONES.filter(z => z.priced);
-  assert.equal(priced.length, 82);
+test('82 zones sum to exactly $135,000', () => {
+  assert.equal(ZONES.length, 82);
   assert.equal(askTotal(), 135000);
   assert.equal(askTotal(), GOAL);
 });
 
-test('the XS zones are $250 and sit outside the car fund', () => {
-  const xs = ZONES.filter(z => z.tier === 'XS');
-  assert.equal(xs.length, 6);
-  for (const z of xs) {
-    assert.equal(z.price, 250);
-    assert.equal(z.priced, false, `${z.id} must not count toward the goal`);
-    assert.equal(isPriced(z.tier), false);
-  }
-  assert.equal(ZONES.reduce((a, z) => a + z.price, 0), 135000 + 6 * 250);
+test('every zone counts toward the car — there is no side pot', () => {
+  // The nose used to carry six 8x7cm zones at $250 that paid running costs instead. They were
+  // too small to read at any honest camera distance, so they are gone and the maths is simpler
+  // for it: the sum of the board and the price of the car are now the same number.
+  assert.equal(ZONES.reduce((a, z) => a + z.price, 0), GOAL);
+  assert.equal(TIERS.XS, undefined, 'the XS tier is retired, not merely unused');
+  assert.equal(ZONES.filter(z => z.tier === 'XS').length, 0);
 });
 
 test('the tier table reproduces the total from its own counts', () => {
@@ -56,7 +53,7 @@ test('the tier table reproduces the total from its own counts', () => {
   for (const [tier, want] of Object.entries(TIER_COUNT)) {
     assert.equal(TIERS[tier].count, want, `${tier} count in TIERS`);
     assert.equal(TIERS[tier].price, TIER_PRICE[tier], `${tier} price`);
-    if (tier !== 'XS') sum += want * TIER_PRICE[tier];
+    sum += want * TIER_PRICE[tier];
   }
   assert.equal(sum, GOAL);
 });
@@ -67,9 +64,9 @@ test('every zone is priced at its tier price — no one-off discounts', () => {
 
 // ── the map ──────────────────────────────────────────────────────────────────
 
-test('88 zones, unique ids, ordered numbering', () => {
-  assert.equal(ZONES.length, 88);
-  assert.equal(new Set(ZONES.map(z => z.id)).size, 88);
+test('82 zones, unique ids, ordered numbering', () => {
+  assert.equal(ZONES.length, 82);
+  assert.equal(new Set(ZONES.map(z => z.id)).size, 82);
   ZONES.forEach((z, i) => assert.equal(z.n, i + 1));
 });
 
@@ -129,8 +126,7 @@ test('a zone is read the right way round from wherever you look at it', () => {
 });
 
 test('the nose carries three zones, the same size as the rest of the car', () => {
-  const front = ZONES.filter(z => z.panel === 'front');
-  const full = front.filter(z => z.tier !== 'XS');
+  const full = ZONES.filter(z => z.panel === 'front');
   assert.equal(full.length, 3,
     'the strip between the plate and the headlights is 14cm tall and 90cm wide — three ' +
     'full-size zones fit it. More only fit by shrinking them, which is what looked wrong.');
@@ -138,7 +134,7 @@ test('the nose carries three zones, the same size as the rest of the car', () =>
 
   // "The same size as the rest" is the actual requirement, so measure it rather than assume it.
   const areaOf = z => z.w * z.h;
-  for (const tier of ['S', 'M']) {          // XS is its own thing and lives out at the corners
+  for (const tier of ['S', 'M']) {
     const here = ZONES.filter(z => z.panel === 'front' && z.tier === tier).map(areaOf);
     const elsewhere = ZONES.filter(z => z.panel !== 'front' && z.tier === tier).map(areaOf);
     const lo = Math.min(...elsewhere), hi = Math.max(...elsewhere);
