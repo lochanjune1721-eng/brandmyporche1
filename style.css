@@ -58,10 +58,10 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 .pitch .finish-line{margin:0 0 18px}
 .pitch .hero-cta{justify-content:center}
 
-/* The reason the car matters, kept below the ask rather than in front of it. Hidden
-   outright until media/dream.jpg exists, rather than rendering a broken image. */
+/* The reason the car matters, kept below the ask rather than in front of it. Width and
+   height are on the tag so the page does not jump when it loads. */
 .dream{margin:40px auto 0;max-width:560px}
-.dream img{display:block;width:100%;height:auto;border-radius:var(--radius);
+.dream img{display:block;width:100%;height:auto;aspect-ratio:1448/1086;border-radius:var(--radius);
   border:1px solid var(--line);background:#f2f2f4}
 .dream figcaption{margin-top:10px;font-size:14px;color:var(--muted)}
 .hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
