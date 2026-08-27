@@ -7,6 +7,7 @@
 
 import { test, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { ZONES } from '../zones.js';
 
 process.env.SUPABASE_URL = 'https://example.supabase.co';
@@ -225,6 +226,24 @@ test('/api/zones reports sold and held separately', async () => {
   const out = payload(r);
   assert.deepEqual(out.sold, [{ zone: 'H5', brand: 'Acme', url: 'https://acme.com', artwork: 'https://cdn/a.svg', at: '2026-01-01T00:00:00Z' }]);
   assert.deepEqual(out.held, ['R3']);
+});
+
+test('the board is cacheable at the edge but never in the browser', () => {
+  // Every visitor polls this every 15 seconds, so it has to be absorbed by the CDN rather
+  // than reaching Supabase once per visitor per poll. max-age=0 keeps the browser out of it,
+  // so a reload is always current; s-maxage lets the edge answer for everyone else.
+  const src = readFileSync(new URL('../api/zones.js', import.meta.url), 'utf8');
+  const m = src.match(/'(public,[^']*)'/);
+  assert.ok(m, 'zones.js must pass an explicit cache directive to json()');
+  assert.match(m[1], /max-age=0/, 'the browser must not hold a stale board across a reload');
+  assert.match(m[1], /s-maxage=\d+/, 'the edge is the whole point');
+});
+
+test('everything that moves money is still no-store', async () => {
+  // The default in json() is what protects these; only the board opts out of it.
+  const { default: checkout } = await import('../api/checkout.js');
+  const r = res();
+  await checkout({ method: 'GET', headers: {}, query: {}, body: {} }, r);
   assert.equal(r.headers['cache-control'], 'no-store');
 });
 

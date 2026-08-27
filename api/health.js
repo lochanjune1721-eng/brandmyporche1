@@ -7,7 +7,7 @@
 // Never prints a secret. Client IDs are public; secrets are reported only as a length and a
 // warning if they look like they were pasted with whitespace.
 
-import { env, sb, tryPaypalToken, paypalMode, demoMode, json, route } from './_lib.js';
+import { env, sb, tryPaypalToken, paypalMode, json, route } from './_lib.js';
 
 const raw = k => process.env[k] || '';
 const shape = k => {
@@ -26,8 +26,6 @@ export default route(async (req, res) => {
   const declared = env('PAYPAL_ENV') || '(unset, defaults to sandbox)';
   const out = {
     ok: true,
-    // First, because it changes what every other line below means.
-    ...(demoMode() ? { DEMO_MODE: 'ON — no payment is taken and any zone can be claimed free. Never leave this set in production.' } : {}),
     paypal: { env: mode, envVar: declared, clientId: env('PAYPAL_CLIENT_ID').slice(0, 8) + '…', secret: shape('PAYPAL_CLIENT_SECRET'),
               webhookId: shape('PAYPAL_WEBHOOK_ID'), currency: env('PAYPAL_CURRENCY') || 'USD' },
     supabase: { url: env('SUPABASE_URL') || null, serviceKey: shape('SUPABASE_SERVICE_ROLE_KEY') },
@@ -45,13 +43,6 @@ export default route(async (req, res) => {
     if (/relation .* does not exist|Could not find the table/i.test(err.message)) {
       out.supabase.fix = 'Run supabase/schema.sql in the Supabase SQL editor.';
     }
-  }
-
-  // In demo mode nothing is ever sent to PayPal, so credentials are not required and their
-  // absence is not a fault. Say so rather than reporting a failure that does not matter.
-  if (demoMode()) {
-    out.paypal.status = 'not used — DEMO_MODE is on';
-    return json(res, out.ok ? 200 : 503, out);
   }
 
   // PayPal: try the configured environment, and if it fails, try the other one and say so.

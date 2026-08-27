@@ -76,19 +76,6 @@ function assertTheMaths() {
   }
 }
 
-/** A demo board that looks like a live board is a trap for whoever sees it next, so this sits
- *  above everything, cannot be dismissed, and offers the way back to an empty board. */
-function showDemoBar() {
-  if (document.getElementById('demo-bar')) return;
-  const bar = document.createElement('div');
-  bar.id = 'demo-bar';
-  bar.innerHTML = '<b>Demo mode</b> — buying a zone takes no payment and charges nothing. ' +
-                  'Everything else is real: the hold, the upload, the board, the car. ' +
-                  '<a href="/api/demo-reset?redirect=1">Clear the board</a>';
-  document.body.prepend(bar);
-  document.body.classList.add('has-demo-bar');
-}
-
 function banner(text, kind = 'bad') {
   const el = $('error-banner');
   el.textContent = text;
@@ -102,23 +89,16 @@ function showReturnMessage() {
   const bought = q.get('bought'), failed = q.get('paid'), cancelled = q.get('cancelled');
   if (bought) {
     const z = zoneById.get(bought);
-    banner(q.get('demo')
-      ? `Demo: zone ${bought}${z ? ` — ${z.tier}, ${z.wCm} cm` : ''} is now yours on the board, ` +
-        `and your artwork is on the car below. Nothing was charged.`
-      : `Zone ${bought}${z ? ` — ${z.tier}, ${z.wCm} cm` : ''} is yours. A receipt is on its way, ` +
-        `and your artwork is on the car below.`, 'good');
+    banner(`Zone ${bought}${z ? ` — ${z.tier}, ${z.wCm} cm` : ''} is yours. A receipt is on its way, ` +
+           `and your artwork is on the car below.`, 'good');
     setTimeout(() => { if (z) focusZone(bought); }, 2500);
   } else if (failed) {
     banner(`That payment did not go through${q.get('zone') ? ` for zone ${q.get('zone')}` : ''}. ` +
            `Nothing was charged — the zone is back on the board.`, 'bad');
   } else if (cancelled !== null) {
     banner(`Checkout cancelled${cancelled ? ` — zone ${cancelled} is free again` : ''}. No charge.`, 'warn');
-  } else if (q.get('reset')) {
-    banner(`Board cleared — ${q.get('reset')} demo purchase(s) removed. Every zone is open again.`, 'warn');
   }
-  if (bought || failed || cancelled !== null || q.get('reset')) {
-    history.replaceState({}, '', location.pathname + location.hash);
-  }
+  if (bought || failed || cancelled !== null) history.replaceState({}, '', location.pathname + location.hash);
 }
 
 // A buyer coming back from checkout must not be handed a board the edge cached before their
@@ -135,8 +115,7 @@ async function refresh() {
     const data = await res.json();
     sold = new Map((data.sold || []).map(s => [s.zone, s]));
     held = new Set(data.held || []);
-    if (data.demo) showDemoBar();
-    $('data-status').textContent = data.demo ? 'Demo' : 'Live';
+    $('data-status').textContent = 'Live';
     renderAll();
   } catch (err) {
     // A dead board is worse than a stale one: keep whatever we had and say so quietly.

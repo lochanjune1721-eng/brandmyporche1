@@ -4,7 +4,7 @@
 // Capture happens here *and* in the webhook. Both are idempotent, because a buyer who closes
 // the tab on the PayPal page still paid and must still get their panel.
 
-import { sb, paypal, route, env, HttpError, demoMode, DEMO_PREFIX } from './_lib.js';
+import { sb, paypal, route, env, HttpError } from './_lib.js';
 import { markPaid } from './_fulfil.js';
 
 export default route(async (req, res) => {
@@ -17,14 +17,6 @@ export default route(async (req, res) => {
   if (!p) return back('?paid=unknown');
   if (p.status === 'paid') return back(`?bought=${encodeURIComponent(p.zone_id)}`);
   if (!p.paypal_order_id) return back(`?paid=failed&zone=${encodeURIComponent(p.zone_id)}`);
-
-  // A demo order has no counterpart at PayPal, so there is nothing to capture. Guard on both
-  // the flag and the prefix: a real order must never complete this way if DEMO_MODE is left
-  // on by mistake, and a demo order must never be sent to PayPal if it is switched off.
-  if (demoMode() && String(p.paypal_order_id).startsWith(DEMO_PREFIX)) {
-    await markPaid(p, null, null);
-    return back(`?bought=${encodeURIComponent(p.zone_id)}&demo=1`);
-  }
 
   try {
     const captured = await paypal(`/v2/checkout/orders/${p.paypal_order_id}/capture`, {

@@ -245,17 +245,3 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
   .stage-wrap{padding:8px 12px}
   .visitor{display:none}
 }
-
-/* Demo mode. Loud on purpose — a board that gives zones away must never be mistaken for the
-   real one, so this is fixed to the top, above the nav, and cannot be dismissed. */
-#demo-bar{position:fixed;top:0;left:0;right:0;z-index:80;padding:8px 16px;text-align:center;
-  background:#7C2D12;color:#fff;font:600 12.5px Inter,sans-serif;line-height:1.4}
-#demo-bar b{font-weight:800}
-#demo-bar a{color:#fff;text-decoration:underline;margin-left:6px}
-body.has-demo-bar{padding-top:34px}
-body.has-demo-bar .nav{top:34px}
-@media(max-width:640px){
-  #demo-bar{font-size:11px;padding:7px 12px}
-  body.has-demo-bar{padding-top:46px}
-  body.has-demo-bar .nav{top:46px}
-}

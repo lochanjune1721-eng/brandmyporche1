@@ -1,7 +1,7 @@
 // GET /api/zones — which zones are gone, and who has them.
 // The only thing the browser learns about the database, and it is all public information.
 
-import { sb, sbRpc, json, route, demoMode } from './_lib.js';
+import { sb, sbRpc, json, route } from './_lib.js';
 
 export default route(async (req, res) => {
   if (req.method !== 'GET') return json(res, 405, { error: 'GET only' });
@@ -25,6 +25,6 @@ export default route(async (req, res) => {
   // be ten seconds old — it already refreshes on a slower cycle than that — and a buyer never
   // waits for it, because the fetch after a purchase carries a cache-buster.
   // max-age=0 keeps the browser out of it, so a reload is always current.
-  json(res, 200, { sold, held, serverTime: new Date().toISOString(), demo: demoMode() || undefined },
+  json(res, 200, { sold, held, serverTime: new Date().toISOString() },
        'public, max-age=0, s-maxage=10, stale-while-revalidate=60');
 });
