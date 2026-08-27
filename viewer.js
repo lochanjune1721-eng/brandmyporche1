@@ -768,34 +768,22 @@ export function applyDecal(zone, logoUrl, href) {
   const st = zoneState.get(zone.id ?? zone);
   if (!st || !st.geometry) return false;      // zones not projected yet — caller retries on zones-ready
   removeDecal(st.zone.id);
-  // Loaded by hand rather than through TextureLoader's default path, for two reasons. A URL
-  // that 404s used to fail silently, leaving a sold zone with no logo and no clue why — now it
-  // says so. And an SVG with no intrinsic size gives WebGL a zero-sized image, so everything
-  // is drawn into a fixed canvas first and the aspect ratio is preserved there.
-  const tex = new THREE.CanvasTexture(document.createElement('canvas'));
+  // TextureLoader's own path, which is the one that works. Drawing the image into a canvas
+  // first — to normalise SVGs — produced a texture that loaded and reported the right size but
+  // rendered nothing, and the logo is far too important to keep guessing at. The one thing kept
+  // from that attempt is the error callback: a URL that 404s used to fail in total silence.
+  const tex = new THREE.TextureLoader().load(
+    logoUrl,
+    () => { cameraDirty = true; },
+    undefined,
+    () => {
+      console.error(`[viewer] artwork for zone ${st.zone.id} would not load: ${logoUrl}\n` +
+                    '  Check the file exists at that exact path and the bucket is public.');
+      const el = document.getElementById('model-status');
+      if (el) el.textContent = `Artwork for ${st.zone.id} failed to load`;
+    });
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    const S = 512;
-    const c = tex.image;
-    c.width = S; c.height = S;
-    const g = c.getContext('2d');
-    const w = img.naturalWidth || S, h = img.naturalHeight || S;
-    const k = Math.min(S / w, S / h);                     // contain, so nothing is cropped
-    g.clearRect(0, 0, S, S);
-    g.drawImage(img, (S - w * k) / 2, (S - h * k) / 2, w * k, h * k);
-    tex.needsUpdate = true;
-    cameraDirty = true;
-  };
-  img.onerror = () => {
-    console.error(`[viewer] artwork for zone ${st.zone.id} would not load: ${logoUrl}\n` +
-                  '  Check the file exists at that exact path and the bucket is public.');
-    const el = document.getElementById('model-status');
-    if (el) el.textContent = `Artwork for ${st.zone.id} failed to load`;
-  };
-  img.src = logoUrl;
   const mesh = new THREE.Mesh(st.geometry, new THREE.MeshStandardMaterial({
     map: tex, transparent: true, depthWrite: false, depthTest: true,
     polygonOffset: true, polygonOffsetFactor: -10, polygonOffsetUnits: -10,
@@ -805,6 +793,12 @@ export function applyDecal(zone, logoUrl, href) {
   mesh.renderOrder = 4;
   scene.add(mesh);
   logoDecals.set(st.zone.id, mesh);
+  // Debug hook, alongside DEBUG_PICK: what state is each logo actually in?
+  window.__logoDebug = () => [...logoDecals].map(([id, m]) => ({
+    id, visible: m.visible, inScene: !!m.parent,
+    tex: m.material.map?.image ? `${m.material.map.image.width}x${m.material.map.image.height}` : 'none',
+    verts: m.geometry?.attributes?.position?.count ?? 0,
+  }));
   st.sold = true;
   st.href = href || null;
   applyLabels(true);
