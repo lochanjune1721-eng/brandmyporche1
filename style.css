@@ -184,3 +184,19 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* ── buy states ────────────────────────────────────────────────────────────── */
+.btn-buy{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:999px;
+  padding:8px 20px;font:800 12px Inter,sans-serif;cursor:pointer;letter-spacing:.01em}
+.btn-buy:hover{background:#000;transform:translateY(-1px)}
+.tag-sold,.tag-held{display:inline-block;border-radius:999px;padding:5px 12px;
+  font:700 11px Inter,sans-serif;letter-spacing:.03em}
+.tag-sold{background:var(--green);color:#fff}
+.tag-held{background:var(--bg2);color:var(--muted);border:1px solid var(--line)}
+.row.is-sold{background:#F6FBF8}
+.row.is-sold .bid b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.row.is-held{opacity:.72}
+.error-banner.good{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.error-banner.warn{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+.held a.owner{display:flex;align-items:center;gap:8px;text-decoration:none;min-width:0}
+.held a.owner:hover span{text-decoration:underline}

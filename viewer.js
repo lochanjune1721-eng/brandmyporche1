@@ -601,7 +601,9 @@ function bindPointer(dom) {
     moveThrottle = now;
     const picked = pickZone(e.clientX, e.clientY);
     setHover(picked?.id || null);
+    const owned = picked?.id && zoneState.get(picked.id)?.href;
     dom.style.cursor = picked?.id ? 'pointer' : 'grab';
+    dom.title = owned ? 'Open ' + new URL(owned).hostname.replace(/^www\./, '') : '';
   });
 }
 
@@ -712,8 +714,9 @@ export function freeSpin() {
   autoSpin = true;
 }
 
-/** Put a winner's logo on their zone — same rectangle, same size, same place. */
-export function applyDecal(zone, logoUrl) {
+/** Put an owner's icon on their zone — same rectangle, same size, same place.
+ *  `href` makes it clickable: tapping a sold zone opens that brand's site. */
+export function applyDecal(zone, logoUrl, href) {
   const st = zoneState.get(zone.id ?? zone);
   if (!st || !st.geometry) return false;      // zones not projected yet — caller retries on zones-ready
   removeDecal(st.zone.id);
@@ -730,6 +733,7 @@ export function applyDecal(zone, logoUrl) {
   scene.add(mesh);
   logoDecals.set(st.zone.id, mesh);
   st.sold = true;
+  st.href = href || null;
   applyLabels(true);
   return true;
 }
@@ -743,7 +747,7 @@ export function removeDecal(id) {
     logoDecals.delete(id);
   }
   const st = zoneState.get(id);
-  if (st && st.sold) { st.sold = false; applyLabels(true); }
+  if (st && st.sold) { st.sold = false; st.href = null; applyLabels(true); }
 }
 
 /** Frame one zone — used when a table row is opened, so the car shows what you are bidding on. */
