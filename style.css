@@ -46,7 +46,16 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 .hero h1{font-size:clamp(38px,8.5vw,76px);line-height:.94;margin:10px 0 12px}
 .finish-line{font-family:"Space Grotesk",Inter,sans-serif;font-size:clamp(17px,2.6vw,24px);
   font-weight:700;letter-spacing:-.02em;margin:0 0 10px}
+.hero .lede{max-width:52ch;font-size:clamp(16px,2.2vw,20px);line-height:1.4;margin:0 0 18px;color:var(--ink)}
 .hero .sub{max-width:64ch;color:var(--muted);font-size:15px;margin:0}
+
+/* The photo the whole thing is for. It carries the pitch, so it leads — but it is a
+   photograph of a real moment, not a hero banner, so it keeps its own proportions and
+   never crops the face away. Hidden entirely until the file exists (see the onerror). */
+.dream{margin:0 0 18px;max-width:560px}
+.dream img{display:block;width:100%;height:auto;border-radius:var(--radius);
+  border:1px solid var(--line);background:#f2f2f4}
+.dream figcaption{margin-top:8px;font-size:13px;color:var(--muted)}
 .hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .meter{margin-top:18px;border:1px solid var(--line);background:#fff;border-radius:var(--radius);padding:14px}
 .meter-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px}
@@ -210,6 +219,10 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
   .hero{padding:14px 16px 4px}
   .hero h1{font-size:clamp(30px,10vw,40px);margin:6px 0 8px}
   .finish-line{font-size:16px;margin:0 0 8px}
+  .hero .lede{font-size:15px;margin:0 0 10px}
+  .dream{max-width:none;margin:0 0 10px}
+  .dream img{max-height:34vh;object-fit:cover;object-position:center 40%}
+  .dream figcaption{font-size:12px;margin-top:6px}
   /* three lines of the pitch, then the car. The rest is still there for anyone who scrolls. */
   .hero .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px}
   .meter{margin-top:12px;padding:11px}
