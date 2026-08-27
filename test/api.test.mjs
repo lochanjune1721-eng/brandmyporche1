@@ -303,3 +303,17 @@ test('/api/health reports what is wrong without printing a secret', async () => 
   assert.match(out.paypal.fix, /sandbox credentials|are sandbox|PAYPAL_ENV=live/);
   assert.equal(out.supabase.status.startsWith('reachable'), true);
 });
+
+test('PAYPAL_ENV is read forgivingly — Live and LIVE mean live', async () => {
+  const { paypalMode, paypalBase } = await import('../api/_lib.js');
+  for (const v of ['live', 'Live', 'LIVE', ' live ', 'production', 'prod']) {
+    process.env.PAYPAL_ENV = v;
+    assert.equal(paypalMode(), 'live', `"${v}" should mean live`);
+    assert.equal(paypalBase(), 'https://api-m.paypal.com');
+  }
+  for (const v of ['sandbox', 'Sandbox', '', 'test', 'staging']) {
+    process.env.PAYPAL_ENV = v;
+    assert.equal(paypalMode(), 'sandbox', `"${v}" must not silently mean live`);
+  }
+  process.env.PAYPAL_ENV = 'sandbox';
+});

@@ -77,8 +77,13 @@ export async function uploadArtwork(purchaseId, dataUrl) {
 
 // ── PayPal ───────────────────────────────────────────────────────────────────
 
+/** 'live', 'Live', 'LIVE', 'production' all mean live. Anything else means sandbox — and
+ *  getting that wrong silently is how you end up testing against real money, or wondering why
+ *  real credentials are rejected. */
+export const paypalMode = () => /^(live|production|prod)$/i.test(env('PAYPAL_ENV')) ? 'live' : 'sandbox';
+
 export const paypalBase = () =>
-  env('PAYPAL_ENV') === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+  paypalMode() === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
 // Keyed by environment and client id: flipping PAYPAL_ENV must not reuse a token minted
 // against the other environment.
@@ -103,7 +108,7 @@ export async function tryPaypalToken(mode) {
 }
 
 export async function paypalToken() {
-  const mode = env('PAYPAL_ENV') === 'live' ? 'live' : 'sandbox';
+  const mode = paypalMode();
   const key = `${mode}:${env('PAYPAL_CLIENT_ID')}`;
   if (tokenCache.value && tokenCache.key === key && Date.now() < tokenCache.expires) return tokenCache.value;
   const got = await tryPaypalToken(mode);

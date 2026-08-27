@@ -7,7 +7,7 @@
 // Never prints a secret. Client IDs are public; secrets are reported only as a length and a
 // warning if they look like they were pasted with whitespace.
 
-import { env, sb, tryPaypalToken, json, route } from './_lib.js';
+import { env, sb, tryPaypalToken, paypalMode, json, route } from './_lib.js';
 
 const raw = k => process.env[k] || '';
 const shape = k => {
@@ -21,10 +21,12 @@ const shape = k => {
 };
 
 export default route(async (req, res) => {
-  const mode = env('PAYPAL_ENV') === 'live' ? 'live' : 'sandbox';
+  const mode = paypalMode();
+  // Show what was typed next to what it was read as — 'Live' meaning sandbox is a nasty surprise.
+  const declared = env('PAYPAL_ENV') || '(unset, defaults to sandbox)';
   const out = {
     ok: true,
-    paypal: { env: mode, clientId: env('PAYPAL_CLIENT_ID').slice(0, 8) + '…', secret: shape('PAYPAL_CLIENT_SECRET'),
+    paypal: { env: mode, envVar: declared, clientId: env('PAYPAL_CLIENT_ID').slice(0, 8) + '…', secret: shape('PAYPAL_CLIENT_SECRET'),
               webhookId: shape('PAYPAL_WEBHOOK_ID'), currency: env('PAYPAL_CURRENCY') || 'USD' },
     supabase: { url: env('SUPABASE_URL') || null, serviceKey: shape('SUPABASE_SERVICE_ROLE_KEY') },
     site: { url: env('SITE_URL') || `https://${req.headers.host}`, holdMinutes: Number(env('HOLD_MINUTES') || 20) },
