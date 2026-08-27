@@ -22,10 +22,10 @@ const TIER_PRICE = { XXL: 12000, XL: 6000, L: 3000, M: 1500, S: 800, XS: 250 };
 const PANEL_PLAN = {
   hood:  { XXL: 1, XL: 1, L: 2, M: 3, S: 4,  total: 11 },
   roof:  {          XL: 1, L: 2, M: 4, S: 5,  total: 12 },
-  left:  {          XL: 1, L: 2, M: 5, S: 12, XS: 3, total: 23 },
-  right: {          XL: 1, L: 2, M: 5, S: 12, XS: 3, total: 23 },
+  left:  {          XL: 1, L: 2, M: 5, S: 13, XS: 3, total: 24 },
+  right: {          XL: 1, L: 2, M: 5, S: 13, XS: 3, total: 24 },
   rear:  {                 L: 2, M: 4, S: 8,  total: 14 },
-  front: {                       M: 1, S: 4,  total: 5  },
+  front: {                       M: 1, S: 2,  total: 3  },
 };
 
 // ── the money ────────────────────────────────────────────────────────────────
@@ -103,14 +103,26 @@ test('the flanks mirror each other exactly', () => {
   });
 });
 
-test('the nose carries five zones, not a crowd', () => {
+test('the nose carries three zones, the same size as the rest of the car', () => {
   const front = ZONES.filter(z => z.panel === 'front');
-  assert.equal(front.length, 5, 'the front strip is 9cm tall — more than five reads as damage');
-  assert.deepEqual(front.map(z => z.tier), ['S', 'S', 'M', 'S', 'S']);
-  for (const z of front) {
-    assert.ok(z.w / z.h < 2, `${z.id} is ${z.wCm}cm — too long and thin for the nose`);
-    assert.ok(z.w >= 0.15, `${z.id} is only ${z.wCm}cm — too small to be worth buying`);
+  assert.equal(front.length, 3,
+    'the strip between the plate and the headlights is 14cm tall and 90cm wide — three ' +
+    'full-size zones fit it. More only fit by shrinking them, which is what looked wrong.');
+  assert.deepEqual(front.map(z => z.tier), ['S', 'M', 'S']);
+
+  // "The same size as the rest" is the actual requirement, so measure it rather than assume it.
+  const areaOf = z => z.w * z.h;
+  for (const tier of ['S', 'M']) {
+    const here = ZONES.filter(z => z.panel === 'front' && z.tier === tier).map(areaOf);
+    const elsewhere = ZONES.filter(z => z.panel !== 'front' && z.tier === tier).map(areaOf);
+    const lo = Math.min(...elsewhere), hi = Math.max(...elsewhere);
+    for (const a of here) {
+      assert.ok(a >= lo * 0.9 && a <= hi * 1.1,
+        `a front ${tier} is ${Math.round(a * 1e4)}cm² but ${tier} elsewhere runs ` +
+        `${Math.round(lo * 1e4)}–${Math.round(hi * 1e4)}cm². It has to look like the others.`);
+    }
   }
+  for (const z of front) assert.ok(z.w / z.h < 2.2, `${z.id} is ${z.wCm}cm — too long and thin`);
 });
 
 test('every zone declares a real probe and a positive footprint', () => {

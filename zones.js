@@ -143,7 +143,8 @@ const ROWS = [
   ]},
   { panel: 'left', probe: 'left', v: 0.30, h: 0.09, name: 'Left — rocker band', zones: [
     { id: 'LF18', tier: 'S',  u: -0.75, w: 0.28 },
-    { id: 'LF19', tier: 'S',  u: -0.06, w: 0.44 },
+    { id: 'LF19', tier: 'S',  u: -0.40, w: 0.20 },
+    { id: 'LF24', tier: 'S',  u: -0.02, w: 0.36 },
     { id: 'LF20', tier: 'S',  u:  0.56, w: 0.44 },
   ]},
 
@@ -186,12 +187,18 @@ const ROWS = [
   // and 14cm in the middle, so the centre M is cut taller than its neighbours — deliberately,
   // the way a lead sponsor sits on a race car. Thirteen zones in here looked like damage;
   // five look like inventory.
-  { panel: 'front', probe: 'front', v: 0.545, h: 0.088, name: 'Front — the nose', zones: [
-    { id: 'P1', tier: 'S', u: -0.60, w: 0.16 },
-    { id: 'P2', tier: 'S', u: -0.30, w: 0.16 },
-    { id: 'P3', tier: 'M', u:  0.00, w: 0.22, h: 0.128, v: 0.527 },
-    { id: 'P4', tier: 'S', u:  0.30, w: 0.16 },
-    { id: 'P5', tier: 'S', u:  0.60, w: 0.16 },
+  // Three zones, at the same size as the rest of the car — 22x14 for an S, 28x14 for the M,
+  // which puts them alongside the rear's 26x15 M and the hood's 14x19 S rather than in a
+  // category of their own.
+  //
+  // Three, not five, because of what the nose actually is: the plate caps this strip at
+  // y 0.445 and the headlights at y 0.59, which leaves 14cm of height, and at that height the
+  // fog lenses cap the width at |x| 0.47. Ninety centimetres of usable width. Five zones only
+  // fit it by shrinking them, which is what made the last two attempts look wrong.
+  { panel: 'front', probe: 'front', v: 0.518, h: 0.135, name: 'Front — the nose', zones: [
+    { id: 'P1', tier: 'S', u: -0.30, w: 0.22 },
+    { id: 'P2', tier: 'M', u:  0.00, w: 0.28 },
+    { id: 'P3', tier: 'S', u:  0.30, w: 0.22 },
   ]},
 ];
 
