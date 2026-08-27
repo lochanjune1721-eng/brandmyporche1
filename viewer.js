@@ -4,17 +4,17 @@
 // box, so a decal wraps the curve of the panel it sits on and the car's own depth buffer
 // hides the ones on the far side. Nothing is faked with screen-space overlays.
 //
-// The hard part at 82 zones is legibility, not geometry. Four rules do that work:
-//   1. panel focus   — the panel you are looking at is solid, the rest sit back at 0.52
-//   2. label decay   — a small zone drops its price, then its tier letter. Never its size.
-//   3. zoom promotes — leaning in gives a zone its detail back, which is how you read a crowded row
-//   4. hover and sold always win, whatever the other three say
-// Nothing is hover-only. Every zone shows what it is and how big it is without being touched.
-// All of it is recomputed when the camera changes, never per frame.
+// A marker is a stitched outline and nothing more. It used to carry the tier letter, the size
+// and the price at three levels of detail that swapped as the camera moved; 82 of those turned
+// a silver car into a sheet of black stickers. What a zone costs and how big it is belongs on
+// the board and in the modal, where there is room to read it.
+//
+// What is left is how strongly each outline is drawn: the panel facing you is full, the rest
+// sit back at 0.62, and hover comes forward. Recomputed when the camera changes, never per frame.
 //
 // Draw calls stay flat: the zones of a panel share one merged BufferGeometry and one
-// material, so 82 zones cost six draws, not 82. Detail level is a per-vertex UV rewrite into
-// the label atlas; opacity is a per-vertex float. Neither rebuilds geometry.
+// material, so 82 zones cost six draws, not 82. Opacity is a per-vertex float, so changing how
+// a panel is drawn never rebuilds geometry.
 //
 // DEBUG_PICK: set window.DEBUG_PICK = true, then click the car to log a probe coordinate you
 // can paste straight into a row in zones.js.
@@ -30,10 +30,7 @@ import { frameFrom } from './zone-frame.js';
 
 window.DEBUG_PICK = false;
 
-const DIM = 0.52;              // what a non-focused panel drops to — still readable, not gone
-const FULL_PX = 58;            // above this: tier, size and price
-const SIZE_PX = 24;            // above this: tier and size. Below it, the size alone.
-const ZOOM_PROMOTE = 2.4;      // camera distance under which every zone gains one level
+const DIM = 0.62;              // what a non-focused panel drops to — a light outline, still there
 const DECAL_DEPTH = 0.16;      // projector depth — deep enough to catch a curved panel
 
 let scene, camera, renderer, controls, stageEl, modelRoot, carMeshes = [];
@@ -111,7 +108,7 @@ export function initViewer(stage, cfg, clickCb) {
   tex.generateMipmaps = true;
   tex.needsUpdate = true;
 
-  for (const z of ZONES) zoneState.set(z.id, { zone: z, mode: 'full', opacity: 1, sold: false, screenPx: 0 });
+  for (const z of ZONES) zoneState.set(z.id, { zone: z, mode: null, opacity: 1, sold: false, screenPx: 0 });
 
   fitLens();
   bindPointer(renderer.domElement);
@@ -120,7 +117,12 @@ export function initViewer(stage, cfg, clickCb) {
 
   const loader = new GLTFLoader();
   const status = t => { const el = document.getElementById('model-status'); if (el) el.textContent = t; };
-  const fallbackTimer = setTimeout(() => { if (!modelRoot) buildFallback(status); }, 12000);
+  // The stand-in only exists for a model that never arrives. 12s was short enough that a
+  // slow connection got the boxes *and* the car, because nothing removed them afterwards.
+  // Now: only fire if no bytes have arrived, and the real model tears the stand-in down.
+  const fallbackTimer = setTimeout(() => {
+    if (!modelRoot && !(window.__carProgress > 0)) buildFallback(status);
+  }, 20000);
 
   // The bytes were requested by the inline script in <head>, long before this module ran.
   // Fall back to fetching them here if that script is absent (a different host page, a test).
@@ -131,6 +133,7 @@ export function initViewer(stage, cfg, clickCb) {
     .then(buf => new Promise((ok, no) => loader.parse(buf, '', ok, no)))
     .then(gltf => {
     clearTimeout(fallbackTimer);
+    dropFallback();                      // if the stand-in was built while we waited, it goes now
     modelRoot = gltf.scene;
     normaliseModel(modelRoot);
     modelRoot.traverse(o => {
@@ -223,15 +226,28 @@ function normaliseModel(root) {
   root.updateMatrixWorld(true);
 }
 
+/** Held separately from modelRoot so the real car can remove it. It used to be assigned to
+ *  modelRoot, which meant that once it existed nothing could tell the two apart. */
+let fallbackRoot = null;
+
 function buildFallback(status) {
-  modelRoot = new THREE.Group();
+  if (fallbackRoot) return;
+  fallbackRoot = new THREE.Group();
   const paint = new THREE.MeshStandardMaterial({ color: 0xb9bcc2, roughness: 0.32, metalness: 0.2 });
   const body = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.62, 4.5), paint);
-  body.position.y = 0.62; modelRoot.add(body);
+  body.position.y = 0.62; fallbackRoot.add(body);
   const roof = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.42, 1.9), paint);
-  roof.position.set(0, 1.1, -0.35); modelRoot.add(roof);
-  scene.add(modelRoot);
+  roof.position.set(0, 1.1, -0.35); fallbackRoot.add(roof);
+  scene.add(fallbackRoot);
   status('Car model unavailable — showing a stand-in. Zones are not projected.');
+}
+
+function dropFallback() {
+  if (!fallbackRoot) return;
+  scene.remove(fallbackRoot);
+  fallbackRoot.traverse(o => { o.geometry?.dispose(); [o.material].flat().forEach(m => m?.dispose()); });
+  fallbackRoot = null;
+  cameraDirty = true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -515,13 +531,11 @@ function screenHeight(st) {
   return Math.abs(scratchA.y - scratchB.y) * 0.5 * stageEl.clientHeight;
 }
 
-const PROMOTE = { tiny: 'size', size: 'full', full: 'full' };
 
 function applyLabels(force = false) {
   if (!panels.size) return;
   const focus = (activePanel === 'all' || activePanel === 'free') ? facingPanel() : activePanel;
   const dist = camera.position.distanceTo(controls.target);
-  const zoomed = dist < ZOOM_PROMOTE;
 
   for (const [panel, rec] of panels) {
     let uvDirty = false, opDirty = false;
@@ -532,13 +546,12 @@ function applyLabels(force = false) {
       const st = zoneState.get(id);
       const hovered = hoveredId === id;
 
-      // 1 — panel focus. 2 — decay by projected size. 3 — zoom promotes. 4 — hover and sold win.
+      // A marker is one outline at one level of detail, so all that is left is how strongly it
+      // is drawn: the panel you are looking at is full, the rest sit back, hover comes forward.
       let opacity = st.sold || hovered ? 1 : (panel === focus ? 1 : DIM);
       const px = screenHeight(st);
-      let mode = px > FULL_PX ? 'full' : px > SIZE_PX ? 'size' : 'tiny';
-      if (zoomed && panel === focus) mode = PROMOTE[mode];
-      if (hovered || st.sold) mode = 'full';
-      if (st.sold) opacity = 0;                        // the logo decal stands in for the label
+      const mode = 'plain';
+      if (st.sold) opacity = 0;                        // the logo decal stands in for the marker
 
       const range = rec.ranges.get(id);
       if (force || mode !== st.mode) {
@@ -755,9 +768,34 @@ export function applyDecal(zone, logoUrl, href) {
   const st = zoneState.get(zone.id ?? zone);
   if (!st || !st.geometry) return false;      // zones not projected yet — caller retries on zones-ready
   removeDecal(st.zone.id);
-  const tex = new THREE.TextureLoader().load(logoUrl, () => { cameraDirty = true; });
+  // Loaded by hand rather than through TextureLoader's default path, for two reasons. A URL
+  // that 404s used to fail silently, leaving a sold zone with no logo and no clue why — now it
+  // says so. And an SVG with no intrinsic size gives WebGL a zero-sized image, so everything
+  // is drawn into a fixed canvas first and the aspect ratio is preserved there.
+  const tex = new THREE.CanvasTexture(document.createElement('canvas'));
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const S = 512;
+    const c = tex.image;
+    c.width = S; c.height = S;
+    const g = c.getContext('2d');
+    const w = img.naturalWidth || S, h = img.naturalHeight || S;
+    const k = Math.min(S / w, S / h);                     // contain, so nothing is cropped
+    g.clearRect(0, 0, S, S);
+    g.drawImage(img, (S - w * k) / 2, (S - h * k) / 2, w * k, h * k);
+    tex.needsUpdate = true;
+    cameraDirty = true;
+  };
+  img.onerror = () => {
+    console.error(`[viewer] artwork for zone ${st.zone.id} would not load: ${logoUrl}\n` +
+                  '  Check the file exists at that exact path and the bucket is public.');
+    const el = document.getElementById('model-status');
+    if (el) el.textContent = `Artwork for ${st.zone.id} failed to load`;
+  };
+  img.src = logoUrl;
   const mesh = new THREE.Mesh(st.geometry, new THREE.MeshStandardMaterial({
     map: tex, transparent: true, depthWrite: false, depthTest: true,
     polygonOffset: true, polygonOffsetFactor: -10, polygonOffsetUnits: -10,

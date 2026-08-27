@@ -1,21 +1,25 @@
 // zone-atlas.js — every zone label, baked once into a single texture.
 //
 // 82 decals with their own canvas texture is 82 uploads and 82 materials. Instead every
-// distinct (tier, size, detail level) gets one cell in one atlas, and identical zones share
-// it. Changing a zone's detail level then costs a UV rewrite, not a canvas redraw — which is
-// the whole point, because detail level changes every time the camera moves.
+// distinct cell shape gets one cell in one atlas and identical zones share it.
 //
 // Cells are drawn at the zone's real aspect ratio, so a 96×8cm banner gets a long thin cell
 // and its dashes stay the same length as everywhere else on the car.
+//
+// A marker is a stitched outline and a price. It used to carry the tier letter, the size and
+// the price at three levels of detail that swapped as the camera moved — 82 of those on a
+// silver car read as a page of black stickers rather than as a car with space on it. The tier
+// and the centimetres live on the board and in the modal, where there is room to read them.
+const MODES = ['plain'];
 
-// Every level carries the size. A bidder should never have to hover, or open the media
-// kit, to find out how big the thing they are buying is.
-const MODES = ['full', 'size', 'tiny'];
-
-const INK = 'rgba(255,255,255,0.96)';
-// Near-black, not grey. On silver paint a translucent grey plate disappears; a black one
-// reads from across the stage, which is the whole job of a zone marker.
-const FILL = 'rgba(9,10,13,0.70)';
+const INK = 'rgba(20,22,28,0.92)';
+// A tint, not a plate. The dashes carry the shape now, so the fill only has to lift the zone
+// off the paint — at 0.7 it buried the car it was supposed to be selling space on.
+const FILL = 'rgba(9,10,13,0.20)';
+// Dark text, because the fill is now light. The halo is what keeps it legible where the car
+// goes dark under a wheel arch or in shadow.
+const TEXT = 'rgba(17,19,24,0.94)';
+const HALO = 'rgba(255,255,255,0.85)';
 
 /** Cell pixel height from the zone's real height, so big zones stay sharp when you zoom in
  *  and a one-off zone does not burn a 256px row of its own. */
@@ -38,7 +42,7 @@ export class ZoneAtlas {
     const wanted = new Map();
     for (const z of zones) {
       for (const mode of MODES) {
-        const key = `${mode}|${z.tier}|${z.price}|${z.wCm}`;
+        const key = `${mode}|${z.wCm}|${z.price}`;
         this.keyOf.set(`${z.id}|${mode}`, key);
         if (!wanted.has(key)) wanted.set(key, { key, mode, zone: z });
       }
@@ -62,10 +66,10 @@ export class ZoneAtlas {
     this.used = y + rowH;
   }
 
-  /** UV rect for a zone at a detail level, or the outline cell as a fallback. */
-  cell(zoneId, mode) {
-    return this.cells.get(this.keyOf.get(`${zoneId}|${mode}`))
-        || this.cells.get(this.keyOf.get(`${zoneId}|outline`));
+  /** UV rect for a zone. There is one cell per zone shape now, so `mode` is always 'plain';
+   *  it stays in the signature because the viewer still addresses cells by (zone, mode). */
+  cell(zoneId, mode = 'plain') {
+    return this.cells.get(this.keyOf.get(`${zoneId}|${mode}`));
   }
 
   draw({ mode, zone }, x, y, w, h) {
@@ -96,48 +100,26 @@ export class ZoneAtlas {
     c.stroke();
     c.setLineDash([]);
 
+    // The price, small, and nothing else. Sized to the cell then shrunk to fit its width, so a
+    // long thin zone shows the same number as a square one rather than clipping it.
+    const label = `$${zone.price.toLocaleString('en-US')}`;
+    const room = w - inset * 2 - Math.max(6, w * 0.10);
+    let px = Math.max(7, Math.round(h * 0.22));
+    for (let i = 0; i < 26 && px > 7; i++) {
+      c.font = `600 ${px}px Inter, system-ui, sans-serif`;
+      if (c.measureText(label).width <= room) break;
+      px = Math.floor(px * 0.92);
+    }
+    c.font = `600 ${px}px Inter, system-ui, sans-serif`;
     c.textAlign = 'center';
-    c.textBaseline = 'alphabetic';
-    c.fillStyle = '#fff';
-    c.shadowColor = 'rgba(0,0,0,0.7)';
-    c.shadowBlur = Math.max(2, h * 0.07);
+    c.textBaseline = 'middle';
+    c.lineWidth = Math.max(2, px * 0.26);
+    c.strokeStyle = HALO;
+    c.lineJoin = 'round';
+    c.strokeText(label, w / 2, h / 2);
+    c.fillStyle = TEXT;
+    c.fillText(label, w / 2, h / 2);
 
-    const room = w - inset * 2 - Math.max(6, w * 0.06);
-    // Size to the cell's height, then shrink until it fits the cell's width. A 94x8cm banner
-    // is mostly width, and "from $3,000" must not run off the end of it.
-    const fit = (text, wanted, weight, family) => {
-      let px = Math.max(6, Math.round(wanted));
-      for (let i = 0; i < 26 && px > 6; i++) {
-        c.font = `${weight} ${px}px ${family}`;
-        if (c.measureText(text).width <= room) break;
-        px = Math.floor(px * 0.92);
-      }
-      c.font = `${weight} ${px}px ${family}`;
-      return px;
-    };
-
-    const GROT = '"Space Grotesk", Inter, system-ui, sans-serif';
-    const SANS = 'Inter, system-ui, sans-serif';
-    const sizeText = `${zone.wCm} cm`;
-    const priceText = `from $${zone.price.toLocaleString('en-US')}`;
-
-    // Lines, biggest first. Whatever the level, the size is on the label.
-    const lines = mode === 'full'
-      ? [[zone.tier, 0.34, 800, GROT], [sizeText, 0.19, 600, SANS], [priceText, 0.17, 500, SANS]]
-      : mode === 'size'
-        ? [[zone.tier, 0.42, 800, GROT], [sizeText, 0.24, 600, SANS]]
-        : [[sizeText, 0.5, 700, SANS]];
-
-    const sized = lines.map(([t, frac, weight, family]) => ({ t, weight, family, px: fit(t, h * frac, weight, family) }));
-    const total = sized.reduce((a, l, i) => a + l.px * (i ? 1.28 : 1), 0);
-    let baseline = (h - total) / 2;
-    sized.forEach((l, i) => {
-      baseline += i === 0 ? l.px * 0.82 : l.px * 1.28;
-      c.font = `${l.weight} ${l.px}px ${l.family}`;
-      c.globalAlpha = i === 0 ? 1 : i === 1 ? 0.95 : 0.85;
-      c.fillText(l.t, w / 2, baseline);
-    });
-    c.globalAlpha = 1;
     c.restore();
   }
 }
