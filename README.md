@@ -112,6 +112,29 @@ test/               node --test
 vendor/three/       three.js 0.160.0, MIT
 ```
 
+## When something is not working
+
+`GET /api/health` tells you what is configured and whether it works, without printing a
+secret. It checks that Supabase accepts the service key and that the `purchases` table exists,
+and it asks PayPal for a token — and if PayPal refuses, it quietly tries the *other*
+environment and tells you if your credentials belong there instead.
+
+That last one catches the most common failure by far:
+
+```
+PayPal auth failed: Client Authentication failed
+```
+
+means the key pair is not valid for the environment `PAYPAL_ENV` names. In order of likelihood:
+
+1. **Live credentials with `PAYPAL_ENV=sandbox`, or the reverse.** They are separate key pairs
+   from separate dashboards and neither works against the other. `/api/health` will name it.
+2. **A trailing newline or space** from pasting into Vercel. The code trims now, but check the
+   `warning` field in `/api/health` — it flags whitespace it had to strip.
+3. **Client ID and Secret from different apps.** They only work as a pair.
+4. **Account password used as the secret.** The secret is generated *under the app*, in the
+   developer dashboard — it is not your PayPal login.
+
 ## Going live
 
 1. Put your Supabase URL and anon key in `config.js`. Create a `bids` table and a `place_bid`

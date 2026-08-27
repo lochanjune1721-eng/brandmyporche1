@@ -6,7 +6,7 @@ import { ZONES } from '../zones.js';
 
 const zoneById = new Map(ZONES.map(z => [z.id, z]));
 
-export const env = k => process.env[k] || '';
+export const env = k => (process.env[k] || '').trim();
 export const required = k => {
   const v = env(k);
   if (!v) throw new HttpError(500, `Server is not configured: ${k} is missing.`);
@@ -80,20 +80,50 @@ export async function uploadArtwork(purchaseId, dataUrl) {
 export const paypalBase = () =>
   env('PAYPAL_ENV') === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
-let tokenCache = { value: '', expires: 0 };
+// Keyed by environment and client id: flipping PAYPAL_ENV must not reuse a token minted
+// against the other environment.
+let tokenCache = { value: '', expires: 0, key: '' };
 
-export async function paypalToken() {
-  if (tokenCache.value && Date.now() < tokenCache.expires) return tokenCache.value;
-  const basic = Buffer.from(`${required('PAYPAL_CLIENT_ID')}:${required('PAYPAL_CLIENT_SECRET')}`).toString('base64');
-  const res = await fetch(`${paypalBase()}/v1/oauth2/token`, {
+/** Ask PayPal for a token against a named environment. Returns {ok, token} or {ok:false, why}. */
+export async function tryPaypalToken(mode) {
+  const id = env('PAYPAL_CLIENT_ID'), secret = env('PAYPAL_CLIENT_SECRET');
+  if (!id || !secret) return { ok: false, why: 'PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not set' };
+  const base = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+  const res = await fetch(`${base}/v1/oauth2/token`, {
     method: 'POST',
-    headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString('base64')}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
     body: 'grant_type=client_credentials',
   });
-  const data = await res.json();
-  if (!res.ok) throw new HttpError(502, `PayPal auth failed: ${data.error_description || res.status}`);
-  tokenCache = { value: data.access_token, expires: Date.now() + (data.expires_in - 60) * 1000 };
-  return tokenCache.value;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, why: data.error_description || data.error || `HTTP ${res.status}` };
+  return { ok: true, token: data.access_token, expiresIn: data.expires_in };
+}
+
+export async function paypalToken() {
+  const mode = env('PAYPAL_ENV') === 'live' ? 'live' : 'sandbox';
+  const key = `${mode}:${env('PAYPAL_CLIENT_ID')}`;
+  if (tokenCache.value && tokenCache.key === key && Date.now() < tokenCache.expires) return tokenCache.value;
+  const got = await tryPaypalToken(mode);
+  if (got.ok) {
+    tokenCache = { value: got.token, expires: Date.now() + (got.expiresIn - 60) * 1000, key };
+    return tokenCache.value;
+  }
+  // "Client Authentication failed" almost always means the keys are for the OTHER environment.
+  // Rather than make someone guess, find out — then say so, and still refuse to charge anyone
+  // against an environment they did not configure.
+  const other = mode === 'live' ? 'sandbox' : 'live';
+  const cross = await tryPaypalToken(other).catch(() => ({ ok: false }));
+  if (cross.ok) {
+    throw new HttpError(500,
+      `PayPal rejected these credentials on ${mode}, but they work on ${other}. ` +
+      `Set PAYPAL_ENV=${other}, or swap in your ${mode} client ID and secret. Nothing was charged.`);
+  }
+  throw new HttpError(502,
+    `PayPal auth failed on ${mode}: ${got.why}. Check PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET ` +
+    `are the pair from the same app in the ${mode} dashboard, with no stray spaces. Nothing was charged.`);
 }
 
 export async function paypal(path, { method = 'GET', body, headers = {} } = {}) {

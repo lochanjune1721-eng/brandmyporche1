@@ -246,3 +246,60 @@ test('every zone id the client can ask for resolves to a price', async () => {
 });
 
 after(() => { globalThis.fetch = realFetch; });
+
+// ── the diagnosis that matters when nothing works ────────────────────────────
+
+test('credentials for the wrong PayPal environment say so, by name', async () => {
+  // "Client Authentication failed" is what PayPal returns when a live key pair is offered to
+  // sandbox, or the reverse. Guessing at that costs an afternoon, so the code checks.
+  const { paypalToken } = await import('../api/_lib.js');
+  process.env.PAYPAL_ENV = 'sandbox';
+  process.env.PAYPAL_CLIENT_ID = 'live-pair';       // a different pair, so no cached token applies
+  reply('sandbox.paypal.com/v1/oauth2/token', { error: 'invalid_client', error_description: 'Client Authentication failed' }, false, 401);
+  reply('api-m.paypal.com/v1/oauth2/token', { access_token: 'live-token', expires_in: 3600 });
+
+  await assert.rejects(() => paypalToken(), err => {
+    assert.match(err.message, /work on live/);
+    assert.match(err.message, /PAYPAL_ENV=live/);
+    assert.match(err.message, /Nothing was charged/);
+    return true;
+  });
+});
+
+test('credentials that work nowhere get the other message, not the misleading one', async () => {
+  const { paypalToken } = await import('../api/_lib.js');
+  process.env.PAYPAL_ENV = 'sandbox';
+  process.env.PAYPAL_CLIENT_ID = 'nonsense-pair';
+  reply('sandbox.paypal.com/v1/oauth2/token', { error_description: 'Client Authentication failed' }, false, 401);
+  reply('api-m.paypal.com/v1/oauth2/token', { error_description: 'Client Authentication failed' }, false, 401);
+  await assert.rejects(() => paypalToken(), err => {
+    assert.match(err.message, /same app/);
+    assert.doesNotMatch(err.message, /work on live/);
+    return true;
+  });
+});
+
+test('a secret pasted with a trailing newline is trimmed, not sent as-is', async () => {
+  const { env } = await import('../api/_lib.js');
+  process.env.PAYPAL_CLIENT_SECRET = '  a-secret\n';
+  assert.equal(env('PAYPAL_CLIENT_SECRET'), 'a-secret');
+  process.env.PAYPAL_CLIENT_SECRET = 'secret';
+});
+
+test('/api/health reports what is wrong without printing a secret', async () => {
+  const { default: health } = await import('../api/health.js');
+  process.env.PAYPAL_ENV = 'sandbox';
+  process.env.PAYPAL_CLIENT_ID = 'health-pair';
+  process.env.PAYPAL_CLIENT_SECRET = 'super-secret-value';
+  reply('/rest/v1/purchases', [{ id: 'x' }]);
+  reply('sandbox.paypal.com/v1/oauth2/token', { error_description: 'Client Authentication failed' }, false, 401);
+  reply('api-m.paypal.com/v1/oauth2/token', { access_token: 't', expires_in: 3600 });
+  const r = res();
+  await health({ method: 'GET', headers: { host: 'x' } }, r);
+  const body = r.body;
+  assert.equal(r.statusCode, 503, 'a broken configuration is not a healthy one');
+  assert.ok(!body.includes('super-secret-value'), 'the secret must never appear in the response');
+  const out = JSON.parse(body);
+  assert.match(out.paypal.fix, /sandbox credentials|are sandbox|PAYPAL_ENV=live/);
+  assert.equal(out.supabase.status.startsWith('reachable'), true);
+});
