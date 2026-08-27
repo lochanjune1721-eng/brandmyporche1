@@ -1,192 +1,233 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Brand My Porsche — Your brand, on my Porsche.</title>
-<meta name="description" content="Ten ad zones on a Porsche 911, sold by live auction. Winning logos applied to the real 3D surfaces."/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css"/>
-<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brand My 911 — 88 panels. $135,000. That's the car.</title>
+<meta name="description" content="88 ad zones on a Porsche 911, sold by live auction. Every priced zone at ask adds up to exactly $135,000 — the price of the car. Winning logos are projected onto the real 3D bodywork.">
+<meta property="og:title" content="Brand My 911">
+<meta property="og:description" content="88 panels. $135,000. That's the car.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E0E0E'/%3E%3Ctext x='16' y='22' font-family='Helvetica,Arial' font-size='13' font-weight='bold' fill='%23fff' text-anchor='middle'%3E911%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
   }
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-<script src="https://www.paypal.com/sdk/js?client-id=test&currency=USD&disable-funding=credit,card"></script>
 </head>
 <body>
+
 <nav class="nav">
   <div class="nav-inner">
-    <div class="wordmark"><i>BP</i> Brand My Porsche</div>
-    <div class="nav-links"><a href="#auction">Live auction</a><a href="#how">How it works</a><a href="#object">The object</a><a href="#faq">FAQ</a></div>
+    <a class="wordmark" href="#top"><i>911</i> Brand My 911</a>
+    <div class="nav-links">
+      <a href="#auction">Live auction</a><a href="#how">How it works</a>
+      <a href="#object">The car</a><a href="media/">Media kit</a><a href="#faq">FAQ</a>
+    </div>
     <div class="nav-actions">
       <div class="curr" id="curr"><button data-c="$" class="active">$</button><button data-c="€">€</button></div>
-      <a href="#auction" class="btn btn-dark">Get a spot</a>
+      <a href="#auction" class="btn btn-dark">Get a zone</a>
     </div>
   </div>
 </nav>
 
-<div class="visitor"><span class="dot"></span><span id="visitor-live">— people visiting now</span><span>·</span><span id="visitor-total">— total</span></div>
+<header class="hero" id="top">
+  <p class="kicker">Live auction · <span id="data-status">starting…</span></p>
+  <h1>Your brand,<br>on my&nbsp;911.</h1>
+  <p class="finish-line">88 panels. $135,000. That's the car.</p>
+  <p class="sub">
+    I'm buying a Porsche 911 Carrera 4S by selling the only surface everyone already looks at.
+    The bodywork is cut into 88 zones. Every priced zone at ask adds up to exactly $135,000 —
+    not a round number I liked, the number on the invoice. Fill the board and the car is bought.
+  </p>
 
-<section class="hero">
-  <h1>Your brand, on my Porsche.</h1>
-  <p style="margin:8px 0 0;color:var(--ink);font-weight:700;letter-spacing:-.01em">88 panels. $135,000. That's the car.</p>
-  <p style="margin:8px 0 0;color:var(--ink);font-weight:600;max-width:62ch">I'm financing my first Porsche by selling the one surface everyone sees: the body.</p>
-  <p class="sub">Your logo will travel with me across SF for your marketing. Streets, meetups, cars & coffee — get your brand in the outside world. <span id="hero-sub-extra"></span></p>
-  <a href="#auction" class="btn btn-dark" style="margin-top:12px">Get a spot</a>
   <div class="meter">
-    <div class="meter-top"><span><b id="raised" class="tabular">$0 raised</b> · <span id="goal-label">goal $40,000</span> <span id="goal-over" class="over" style="display:none">· goal passed · 109%</span></span><span class="tabular" id="spots-taken">0 of 10 taken</span></div>
+    <div class="meter-top">
+      <span><b id="raised" class="tabular">$0</b> <span id="goal-label" class="muted">of $135,000</span>
+        <span id="goal-over" class="over" hidden></span></span>
+      <span class="tabular muted" id="spots-taken">0 of 88 zones taken</span>
+    </div>
     <div class="bar"><i id="bar" style="width:0%"></i></div>
-    <div class="meter-bottom"><span id="meter-left">0% to goal</span><span><a href="#object" style="color:inherit">What the money buys</a></span></div>
+    <div class="meter-bottom">
+      <span id="meter-pct">0% of the car</span>
+      <span>Closes in <b id="hero-countdown" class="tabular">—</b></span>
+    </div>
   </div>
-  <div class="hint">Auction ends in <b id="hero-countdown" class="tabular">—</b> · you can still outbid any spot</div>
-</section>
+  <div class="hero-cta">
+    <a href="#auction" class="btn btn-dark">Get a zone</a>
+    <a href="media/" class="btn btn-ghost">Media kit &amp; zone map</a>
+  </div>
+</header>
 
 <div class="stage-wrap">
   <div class="stage" id="stage">
     <div class="viewbar" id="viewbar">
-      <button data-view="top">Top</button><button data-view="front">Front</button><button data-view="left">Left</button><button data-view="right">Right</button><button data-view="rear">Rear</button><button data-view="free" id="freeBtn">Free spin</button>
+      <button data-view="hood" class="active">Hood</button><button data-view="top">Roof</button>
+      <button data-view="left">Left</button><button data-view="right">Right</button>
+      <button data-view="rear">Rear</button><button data-view="front">Front</button>
+      <button data-view="free" id="freeBtn">Free spin</button>
     </div>
-    <label class="final"><input type="checkbox" id="finalToggle"> Finalize</label>
-    <div class="markers" id="markers"></div>
-    <div class="stage-hint">Drag to rotate · scroll to zoom · tap a marker to bid</div>
-    <div id="model-status" style="position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:11px;pointer-events:none">Loading model…</div>
+    <div class="stage-hint">Drag to rotate · scroll to zoom · zoom in to reveal the small zones · tap a zone to bid</div>
+    <div id="model-status" class="model-status">Loading car…</div>
   </div>
-  <div id="error-banner" style="display:none;max-width:var(--max);margin:8px auto 0;padding:10px 16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;color:#991B1B;font-size:12px"></div>
+  <div id="error-banner" class="error-banner" style="display:none"></div>
 </div>
 
 <section class="section" id="auction">
   <div class="table-head">
-    <div><h2>The auction, live.</h2><p>Every spot shows its current top bid. Sorted by bid — expensive zones anchor the top.</p></div>
-    <div style="text-align:right"><p id="auction-meta">Live auction — 0 of 88 zones taken · ends in —</p><p class="tabular" id="auction-pricing" style="font-size:11px">88 panels · $135,000 at ask · XS $250 on-ramp</p></div>
+    <div>
+      <h2>The board.</h2>
+      <p class="muted">Every zone, its ask, and whoever currently holds it. Sorted by standing bid.</p>
+    </div>
+    <p class="muted tabular" id="auction-meta">—</p>
   </div>
-  <div id="sticky-summary" style="position:sticky;top:52px;z-index:5;background:var(--ink);color:#fff;border-radius:999px;padding:8px 14px;display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;margin-top:10px"><span id="sticky-taken">0 of 88 zones taken</span><span id="sticky-raised" class="tabular">$0 of $135,000</span></div>
-  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap" id="panel-pills">
-    <button data-panel="all" class="pill active" style="border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer">All</button>
-    <button data-panel="hood" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">Hood</button>
-    <button data-panel="roof" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">Roof</button>
-    <button data-panel="left" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">Left</button>
-    <button data-panel="right" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">Right</button>
-    <button data-panel="rear" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">Rear</button>
-    <button data-panel="front" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">Front</button>
+
+  <div class="sticky-summary">
+    <span id="sticky-taken">0 of 88 zones taken</span>
+    <span class="tabular" id="sticky-raised">$0 of $135,000</span>
   </div>
-  <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap" id="tier-pills">
-    <button data-tier="all" class="pill active" style="border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer">All tiers</button>
-    <button data-tier="XXL" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">XXL $12k</button>
-    <button data-tier="XL" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">XL $6k</button>
-    <button data-tier="L" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">L $3k</button>
-    <button data-tier="M" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">M $1.5k</button>
-    <button data-tier="S" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">S $800</button>
-    <button data-tier="XS" class="pill" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer">XS $250</button>
+
+  <div class="pills" id="panel-pills">
+    <button data-panel="all" class="pill active">All panels</button>
+    <button data-panel="hood" class="pill">Hood <i>11</i></button>
+    <button data-panel="roof" class="pill">Roof <i>10</i></button>
+    <button data-panel="left" class="pill">Left <i>20</i></button>
+    <button data-panel="right" class="pill">Right <i>20</i></button>
+    <button data-panel="rear" class="pill">Rear <i>14</i></button>
+    <button data-panel="front" class="pill">Front <i>13</i></button>
   </div>
+  <div class="pills" id="tier-pills">
+    <button data-tier="all" class="pill active">All tiers</button>
+    <button data-tier="XXL" class="pill">XXL $12,000 <i>1</i></button>
+    <button data-tier="XL" class="pill">XL $6,000 <i>4</i></button>
+    <button data-tier="L" class="pill">L $3,000 <i>10</i></button>
+    <button data-tier="M" class="pill">M $1,500 <i>22</i></button>
+    <button data-tier="S" class="pill">S $800 <i>45</i></button>
+    <button data-tier="XS" class="pill">XS $250 <i>6</i></button>
+  </div>
+
   <div class="table" id="table"></div>
+  <p class="muted small">82 priced zones = $135,000 exactly. The 6 XS zones are $250 each and sit outside that total — they pay the running costs.</p>
 </section>
 
 <section class="how" id="how">
-  <div class="how-card"><div style="width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px">1</div><h3>Pick your spot</h3><p>Ten zones, fixed sizes, never more. Tap a marker on the 3D car or a row in the table.</p></div>
-  <div class="how-card"><div style="width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px">2</div><h3>Win the bid</h3><p>Bidding is free and non-binding. Top bid per zone wins. You get an email if you're outbid.</p></div>
-  <div class="how-card"><div style="width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px">3</div><h3>Your logo rides the Porsche</h3><p>Applied to the real surface and photographed for 14 days — plus a backlink here.</p></div>
+  <div class="how-card"><span class="step">1</span><h3>Pick a zone</h3>
+    <p>88 of them, fixed sizes, never any more. Tap one on the car or take a row from the board.</p></div>
+  <div class="how-card"><span class="step">2</span><h3>Win it</h3>
+    <p>Bidding is free and non-binding until the auction closes. Highest bid per zone wins; you get an email the moment someone outbids you.</p></div>
+  <div class="how-card"><span class="step">3</span><h3>It goes on the car</h3>
+    <p>Your artwork is printed, applied to that exact panel, and the car is driven and photographed for 14 days. Plus a listed link here.</p></div>
 </section>
 
 <section class="object" id="object">
   <div class="obj-card">
-    <h3>The object</h3>
-    <p>A Porsche 911 Carrera 4S — the icon. The auction funds the car itself. Every dollar is checkable: <a href="https://www.porsche.com/usa/models/911/" target="_blank" rel="noopener">see the Porsche configurator</a> for the exact price. Goal $40,000 is the down payment + wrap + documentation. <span id="object-extra"></span></p>
-    <p style="margin-top:10px"><b>Spec:</b> 10 zones, from 12×8 cm to 24×14 cm. Logos are UV-printed, applied to the real panels, photographed daily.</p>
+    <h3>The car</h3>
+    <p>A Porsche 911 Carrera 4S. <b>$135,000</b> is not a fundraising target I picked — it is what the
+    car costs, and the whole zone map is reverse-engineered from it. One XXL at $12,000, four XL at
+    $6,000, ten L at $3,000, twenty-two M at $1,500, forty-five S at $800. Add them up and you get
+    $135,000 with nothing left over. That is the entire pricing argument.</p>
+    <p>The progress bar does not stop at 100%. If it passes, it turns green and says so.</p>
   </div>
-  <div class="obj-card" style="background:var(--bg2)">
-    <h3>What $40k buys</h3>
-    <p>Deposit, factory delivery, and the documented 14-day drive. The progress bar above does not cap at 100% — when it passes the goal it turns green and reads <b>goal passed · 109%</b>. Overshoot is the proof.</p>
+  <div class="obj-card alt">
+    <h3>What you actually get</h3>
+    <p>No invented impression counts. Here is the whole promise: the wrap stays on for
+    <b>14 days</b>, the car is driven daily in <b>San Francisco</b>, it attends <b>3 scheduled
+    cars &amp; coffee meets</b>, and every zone appears in the daily photo set. If a number is not on
+    this page, I am not claiming it.</p>
+    <p><a href="media/">Media kit &amp; full zone map →</a></p>
   </div>
 </section>
 
 <section class="faq" id="faq">
-  <h2 style="font-family:Space Grotesk;letter-spacing:-.02em">FAQ</h2>
-  <details open><summary>Is this real? <span>+</span></summary><p>Yes. The car is real, the zones are real, the bids are real. The only fictional thing is the idea that a Porsche isn't ad inventory.</p></details>
-  <details><summary>What do I actually get? <span>+</span></summary><p>Your logo on the panel for 14 days, in every photo and video, plus a listed spot with a backlink here. No guaranteed impressions. Guaranteed it goes everywhere the car goes.</p></details>
-  <details><summary>How does payment work? <span>+</span></summary><p>You don't pay to bid. When the auction closes, top bid per zone wins. I send a Stripe link. Payment happens after winning, never before.</p></details>
-  <details><summary>What if someone outbids me? <span>+</span></summary><p>You get an email with a one-click link back to outbid. Minimum increment is <span class="tabular">$50</span> over the current top.</p></details>
-  <details><summary>Can any brand join? <span>+</span></summary><p>Almost. No gambling, no crypto pump-and-dumps, no adult content, nothing I'd be embarrassed to explain to a Porsche tech or my mother. I keep final say.</p></details>
-  <details><summary>Why are XS spots so cheap? <span>+</span></summary><p>XS spots are $250 and sit outside the $135,000 maths — they go to the running costs. Everything else buys the car. We added them because a board whose floor is $800 stays empty on day one; cheap spots are what make the page look alive, and an alive page is what makes someone bid $6,000.</p></details>
-  <details><summary>Why are you doing this? <span>+</span></summary><p>Because the reference — brandmymac.com — sold out 10 MacBook spots at 109% of goal with ~17k visitors by treating an absurd premise with total seriousness. This is the same mechanic, on a surface you can spin.</p></details>
-</section>
-
-<section class="section" id="media" style="max-width:var(--max);margin:0 auto;padding:16px">
-  <h2 style="font-family:Space Grotesk;letter-spacing:-.02em">Media kit</h2>
-  <p style="color:var(--muted);font-size:13px">Download the full zone map PDF, dimensions in cm for every tier (XS 18×10, S 26×14–34×14, M 40×26–56×34, L 56×30–104×44, XL 104×46–110×40, XXL 120×46), artwork specs: vector or 300dpi PNG with transparency, CMYK-safe. Deadline for files: 48h after close. <a href="#" onclick="alert('PDF would download here — wire to /media/zone-map.pdf'); return false;" style="text-decoration:underline">Download PDF →</a></p>
-  <p style="color:var(--muted);font-size:13px;margin-top:8px"><b>Honest reach:</b> The wrap stays on 14 days, appears in every SF drive, 3 scheduled cars & coffee meets + daily posts. We don't invent impressions — the car goes where I go, and the photos prove it.</p>
-</section>
-
-<section class="founder">
-  <div class="founder-card">
-    <div class="avatar">◎</div>
-    <div>
-      <div style="font-size:10px;letter-spacing:.12em;font-weight:700;color:var(--muted)">FOUNDER NOTE</div>
-      <b>Lochan —</b> I build things on the internet. This is a sincere auction with a real car and real money. <a href="https://x.com" target="_blank">x.com/lochan</a> · <a href="mailto:hello@brandmyporsche.com">hello@brandmyporsche.com</a>
-    </div>
-  </div>
+  <h2>FAQ</h2>
+  <details open><summary>Is this real?<span>+</span></summary>
+    <p>Yes. Real car, real zones, real bids. The only absurd part is the premise that a 911 is ad inventory — everything downstream of that is straightforward.</p></details>
+  <details><summary>Why are the XS zones so cheap?<span>+</span></summary>
+    <p>Because a board whose floor is $800 sits empty on day one, and an empty board never gets anyone to bid $6,000. The six XS zones are $250, they live in the contingency row across the nose, and they go to running costs — fuel, wrap, wash — not the car fund. Everything else buys the car. That is why they sit outside the $135,000.</p></details>
+  <details><summary>How does payment work?<span>+</span></summary>
+    <p>You do not pay to bid. When the auction closes, the top bid on each zone wins and I send a payment link. Money moves after winning, never before.</p></details>
+  <details><summary>What if someone outbids me?<span>+</span></summary>
+    <p>You get an email with a one-click link back. The minimum raise is <span class="tabular">$50</span> over the standing bid.</p></details>
+  <details><summary>What artwork do you need?<span>+</span></summary>
+    <p>Vector (SVG, PDF, EPS) or a 300dpi PNG with transparency, CMYK-safe. Every zone's exact size in centimetres is in the <a href="media/">media kit</a>. Files are due 48 hours after the close.</p></details>
+  <details><summary>Can any brand join?<span>+</span></summary>
+    <p>Almost. No gambling, no crypto pump-and-dumps, no adult content, nothing I would be embarrassed to explain to a Porsche technician or to my mother. I keep final say and will refund rather than argue.</p></details>
+  <details><summary>Why 88 zones?<span>+</span></summary>
+    <p>Because that is how many fit on the bodywork at these six sizes without crossing a shut line, a door handle, a wheel arch, a light or the number plate. The count came out of the car, not the spreadsheet — and then the prices were set so the total landed exactly on the invoice.</p></details>
 </section>
 
 <footer class="footer">
-  <div>Porsche® and 911® are trademarks of Dr. Ing. h.c. F. Porsche AG. This site is not affiliated with Porsche. <span id="model-credit"></span></div>
-  <div style="margin-top:6px"><a href="#">Privacy</a> · <a href="#">Terms</a> · <span id="supa-status">Supabase: local demo (no keys)</span></div>
+  <div class="founder">
+    <div class="avatar">◎</div>
+    <div><b>Lochan</b> — I build things on the internet. This is a sincere auction with a real car
+      and real money. <a href="mailto:hello@brandmy911.com">hello@brandmy911.com</a></div>
+  </div>
+  <p class="small">Porsche® and 911® are trademarks of Dr. Ing. h.c. F. Porsche AG. This site is not affiliated with Porsche.
+    <span id="model-credit"></span></p>
 </footer>
 
 <div id="modal" class="modal">
   <div class="modal-bg" id="modal-bg"></div>
   <form id="bid-form" class="modal-card">
-    <div class="modal-head"><div><div style="font-size:10px;letter-spacing:.1em;font-weight:800;color:var(--muted)" id="modal-kicker">Spot #1 — The Hood</div><div style="font-size:12px;color:var(--muted)" id="modal-meta">24 × 14 cm · Large</div><div style="font-size:12px;font-weight:700;margin-top:4px" id="modal-min">Minimum: $2,550</div></div><button type="button" class="x" id="modal-x">✕</button></div>
-    <div class="form-grid"><label>Your name<input required id="f-name" placeholder="Alex Rivera"></label><label>Email<input required type="email" id="f-email" placeholder="alex@brand.com"></label></div>
-    <label>Brand / company<input required id="f-brand" placeholder="Acme Co."></label>
-    <label>Website<input id="f-url" placeholder="https://acme.com"></label>
-    <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:end"><label>Amount<div class="money"><span>$</span><input required type="number" id="f-amount" step="50"></div></label><div style="font-size:11px;color:var(--muted);padding-bottom:6px">No card until you win.</div></div>
-    <label>Logo — PNG / JPG / SVG, max 2 MB<input type="file" id="f-file" accept=".png,.jpg,.jpeg,.svg,image/*"></label>
-    <div class="preview" id="preview"><span style="font-size:11px;color:var(--muted)">No logo yet</span></div>
+    <div class="modal-head">
+      <div>
+        <div class="kicker" id="modal-kicker">—</div>
+        <b id="modal-title">—</b>
+        <div class="rowsub" id="modal-meta">—</div>
+        <div class="modal-min" id="modal-min">—</div>
+        <div class="rowsub" id="modal-note"></div>
+      </div>
+      <button type="button" class="x" id="modal-x" aria-label="Close">✕</button>
+    </div>
+    <div class="form-grid">
+      <label>Your name<input required id="f-name" autocomplete="name" placeholder="Alex Rivera"></label>
+      <label>Email<input required type="email" id="f-email" autocomplete="email" placeholder="alex@acme.com"></label>
+    </div>
+    <label>Brand<input required id="f-brand" placeholder="Acme Co."></label>
+    <label>Website<input id="f-url" inputmode="url" placeholder="https://acme.com"></label>
+    <label>Bid<div class="money"><span>$</span><input required type="number" id="f-amount"></div></label>
+    <label>Artwork — SVG, PNG, JPG or WebP, max 3 MB<input type="file" id="f-file" accept=".svg,.png,.jpg,.jpeg,.webp,image/*"></label>
+    <div class="preview" id="preview"><span class="rowsub">No artwork yet</span></div>
     <div id="form-err" class="err" style="display:none"></div>
-    <button type="submit" class="btn btn-dark" style="width:100%;margin-top:12px" id="submit-btn">Place bid</button>
-    <p style="font-size:10px;color:var(--muted);text-align:center;margin-top:8px">Bidding is free and non-binding until the auction closes.</p>
+    <button type="submit" class="btn btn-dark wide" id="submit-btn">Place bid</button>
+    <p class="small center">Free and non-binding until the auction closes. No card until you win.</p>
   </form>
 </div>
 
 <script type="module">
 import { CONFIG } from './config.js';
-import { initViewer, applyDecal, removeDecal, setView, setPanel } from './viewer.js';
+import { initViewer, setView, setPanel, freeSpin } from './viewer.js';
 import { initApp } from './app.js';
-window.setPanel = setPanel;
-window.addEventListener('error', e=>{ const b=document.getElementById('error-banner'); if(b){ b.style.display='block'; b.textContent='Error: '+e.message+' — check console. If you opened file:// directly, you must use a local server: python3 -m http.server 8000'; }});
-window.addEventListener('unhandledrejection', e=>{ const b=document.getElementById('error-banner'); if(b){ b.style.display='block'; b.textContent='Error: '+(e.reason?.message||e.reason)+' — use http:// not file://'; }});
-const viewer = initViewer(document.getElementById('stage'), CONFIG, (id)=> window.__openBid(id));
-window.__viewer = viewer;
-initApp(CONFIG, viewer);
-document.querySelectorAll('#viewbar button').forEach(b=> b.onclick=()=>{
-  if(b.dataset.view==='free'){ 
-    document.querySelectorAll('#viewbar button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-    if(window.setPanel) window.setPanel('free');
-    autoRotate(); 
-    return; 
-  }
-  document.querySelectorAll('#viewbar button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); 
-  setView(b.dataset.view);
-  if(window.setPanel) window.setPanel(b.dataset.view);
+
+const banner = document.getElementById('error-banner');
+const fail = msg => { banner.style.display = 'block'; banner.textContent = msg; };
+addEventListener('error', e => fail(`${e.message} — if you opened this as a file://, serve it instead: python3 -m http.server 8000`));
+addEventListener('unhandledrejection', e => fail(String(e.reason?.message || e.reason)));
+
+initViewer(document.getElementById('stage'), CONFIG, id => window.__openBid?.(id));
+initApp();
+setView('hood');
+setPanel('hood');
+
+document.querySelectorAll('#viewbar button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#viewbar button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  const v = b.dataset.view;
+  if (v === 'free') { freeSpin(); setPanel('free'); return; }
+  setView(v);
+  setPanel(v === 'top' ? 'roof' : v);
 });
-function autoRotate(){ 
-  // trigger OrbitControls autoRotate for 4s
-  if(window.__viewer?.controls){ window.__viewer.controls.autoRotate=true; window.__viewer.controls.autoRotateSpeed=1.0; setTimeout(()=> window.__viewer.controls.autoRotate=false, 4200); }
-  if(window.setPanel) window.setPanel('free');
-}
-document.getElementById('finalToggle').onchange=e=>{
-  if(e.target.checked) window.__finalLook=true; else window.__finalLook=false;
-  window.dispatchEvent(new CustomEvent('final-look', {detail:e.target.checked}));
-};
-document.getElementById('curr').onclick=e=>{
-  const b=e.target.closest('button'); if(!b) return;
-  document.querySelectorAll('#curr button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  window.dispatchEvent(new CustomEvent('currency', {detail:b.dataset.c}));
+
+document.getElementById('curr').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#curr button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  dispatchEvent(new CustomEvent('currency', { detail: b.dataset.c }));
 };
 </script>
 </body>

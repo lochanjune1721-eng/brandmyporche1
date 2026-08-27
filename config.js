@@ -1,119 +1,32 @@
+// config.js — everything you would change without touching code.
+// The zone map itself lives in zones.js; the numbers there are load-bearing.
+
+import { ZONES, TIERS, GOAL, PANELS, PANEL_LABEL, askTotal, tally } from './zones.js';
+
 export const CONFIG = {
   currency: '$',
+  /** Minimum raise over the standing bid. */
   minIncrement: 50,
-  goal: 135000,
+  /** The car. Every priced zone at ask adds up to exactly this — see zones.js. */
+  goal: GOAL,
   endsAt: '2026-09-15T20:00:00Z',
+
   modelUrl: './model.glb',
-  modelScale: 1.05,
-  modelRotationY: 0,
-  modelYOffset: -0.30,
-  modelCredit: 'Porsche 911 model — CC0 (Sketchfab). Porsche trademark is property of Dr. Ing. h.c. F. Porsche AG.',
+  modelCredit: 'Porsche 911 model — CC0 (Sketchfab). Porsche and 911 are trademarks of Dr. Ing. h.c. F. Porsche AG.',
+
+  /** Live bids. Leave blank and the site runs on localStorage as a demo. */
   supabaseUrl: '',
   supabaseAnonKey: '',
+  /** Winners pay after the close, never before. */
   paypal: { paypalMe: 'your-paypal-me', clientId: '', currency: 'USD' },
-  // 88 zones — 82 priced totalling $135,000 + 6 XS at $250 (outside maths, running costs)
-  spots: [
-    // === HOOD 11 === 1 XXL 12000 +1 XL 6000 +2 L 3000*2=6000 +3 M 1500*3=4500 +4 S 800*4=3200 = 31,700
-    { id: 1,  panel: 'hood', tier: 'XL',  name: 'H1 Hood XL',   wCm: '90×40', price: 6000,  w: 1.05, h: 0.42, pos: [-0.42, 0.88, 1.05], normal: [0,1,0.30], roll: 0 },
-    { id: 2,  panel: 'hood', tier: 'XL',  name: 'H2 Hood XL',  wCm: '110×40',price: 6000,  w: 1.10, h: 0.40, pos: [0, 0.88, 1.05], normal: [0,1,0.30], roll: 0 },
-    { id: 3,  panel: 'hood', tier: 'L',   name: 'H3 Hood L',   wCm: '90×40', price: 3000,  w: 0.90, h: 0.40, pos: [0.42, 0.88, 1.05], normal: [0,1,0.30], roll: 0 },
-    { id: 4,  panel: 'hood', tier: 'M',   name: 'H4 Hood M',   wCm: '50×34', price: 1500,  w: 0.50, h: 0.34, pos: [-0.60, 0.78, 1.55], normal: [0,1,0.40], roll: 0 },
-    { id: 5,  panel: 'hood', tier: 'S',   name: 'H5 Hood S',   wCm: '26×16', price: 800,   w: 0.26, h: 0.16, pos: [-0.30, 0.87, 1.55], normal: [0,1,0.40], roll: 0 },
-    { id: 6,  panel: 'hood', tier: 'S',   name: 'H6 Hood S',   wCm: '26×16', price: 800,   w: 0.26, h: 0.16, pos: [-0.30, 0.69, 1.55], normal: [0,1,0.40], roll: 0 },
-    { id: 7,  panel: 'hood', tier: 'XXL', name: 'H7 Hood XXL', wCm: '120×46',price: 12000, w: 1.20, h: 0.46, pos: [0, 0.78, 1.55], normal: [0,1,0.45], roll: 0 },
-    { id: 8,  panel: 'hood', tier: 'S',   name: 'H8 Hood S',   wCm: '26×16', price: 800,   w: 0.26, h: 0.16, pos: [0.30, 0.87, 1.55], normal: [0,1,0.40], roll: 0 },
-    { id: 9,  panel: 'hood', tier: 'S',   name: 'H9 Hood S',   wCm: '26×16', price: 800,   w: 0.26, h: 0.16, pos: [0.30, 0.69, 1.55], normal: [0,1,0.40], roll: 0 },
-    { id: 10, panel: 'hood', tier: 'M',   name: 'H10 Hood M',  wCm: '50×34', price: 1500,  w: 0.50, h: 0.34, pos: [0.60, 0.78, 1.55], normal: [0,1,0.40], roll: 0 },
-    { id: 11, panel: 'hood', tier: 'M',   name: 'H11 Hood M',  wCm: '56×34', price: 1500,  w: 0.56, h: 0.34, pos: [0, 0.68, 2.00], normal: [0,1,0.55], roll: 0 },
 
-    // === ROOF 10 === 1 XL 6000 +2 L 6000 +4 M 6000 +3 S 2400 = 20,400 (cumulative 52,100)
-    { id: 12, panel: 'roof', tier: 'S',  name: 'R1 Roof S',  wCm: '46×28', price: 800,  w: 0.42, h: 0.24, pos: [-0.30, 1.28, 0.55], normal: [0,1,0.05], roll: 0 },
-    { id: 13, panel: 'roof', tier: 'S',  name: 'R2 Roof S',  wCm: '46×28', price: 800,  w: 0.42, h: 0.24, pos: [0.30, 1.28, 0.55], normal: [0,1,0.05], roll: 0 },
-    { id: 14, panel: 'roof', tier: 'XL', name: 'R3 Roof XL', wCm: '104×46',price: 6000, w: 1.04, h: 0.46, pos: [0, 1.30, 0.05], normal: [0,1,0.05], roll: 0 },
-    { id: 15, panel: 'roof', tier: 'S',  name: 'R4 Roof S',  wCm: '34×26', price: 800,  w: 0.30, h: 0.20, pos: [-0.34, 1.28, -0.42], normal: [0,1,0.05], roll: 0 },
-    { id: 16, panel: 'roof', tier: 'S',  name: 'R5 Roof S',  wCm: '34×26', price: 800,  w: 0.30, h: 0.20, pos: [0, 1.28, -0.42], normal: [0,1,0.05], roll: 0 },
-    { id: 17, panel: 'roof', tier: 'M',  name: 'R6 Roof M',  wCm: '34×26', price: 1500, w: 0.34, h: 0.26, pos: [0.34, 1.28, -0.42], normal: [0,1,0.05], roll: 0 },
-    { id: 18, panel: 'roof', tier: 'XL',  name: 'R7 Roof XL',  wCm: '104×44',price: 6000,  w: 1.10, h: 0.48, pos: [0, 1.28, -0.92], normal: [0,1,0.05], roll: 0 },
-    { id: 19, panel: 'roof', tier: 'S',  name: 'R8 Roof S',  wCm: '42×24', price: 800,  w: 0.42, h: 0.24, pos: [-0.28, 1.26, -1.30], normal: [0,1,0.05], roll: 0 },
-    { id: 20, panel: 'roof', tier: 'S',  name: 'R9 Roof S',  wCm: '42×24', price: 800,  w: 0.42, h: 0.24, pos: [0.28, 1.26, -1.30], normal: [0,1,0.05], roll: 0 },
-    { id: 21, panel: 'roof', tier: 'S',  name: 'R10 Roof S', wCm: '60×14', price: 800,  w: 0.60, h: 0.14, pos: [0, 1.26, -1.55], normal: [0,1,0.05], roll: 0 },
+  /** What a winner actually gets. No invented impressions — see /media. */
+  reach: { wrapDays: 14, events: 3, city: 'San Francisco' },
 
-    // === LEFT FLANK 20 === 1 XL 6000 +2 L 6000 +5 M 7500 +12 S 9600 = 29,100 (cumulative 81,200)
-    { id: 22, panel: 'left', tier: 'M', name: 'LF1 Glass M', wCm: '40×26', price: 1500, w: 0.40, h: 0.26, pos: [-0.92, 1.05, -0.55], normal: [-1,0.10,0], roll: 0 },
-    { id: 23, panel: 'left', tier: 'L', name: 'LF2 Glass L', wCm: '56×30', price: 3000, w: 0.56, h: 0.30, pos: [-0.92, 1.05, -0.05], normal: [-1,0.10,0], roll: 0 },
-    { id: 24, panel: 'left', tier: 'L', name: 'LF3 Glass L', wCm: '56×30', price: 3000, w: 0.56, h: 0.30, pos: [-0.92, 1.05, 0.42], normal: [-1,0.10,0], roll: 0 },
-    { id: 25, panel: 'left', tier: 'S', name: 'LF4 Upper S', wCm: '30×20', price: 800,  w: 0.30, h: 0.20, pos: [-0.94, 0.80, -1.35], normal: [-1,0.10,0], roll: 0 },
-    { id: 26, panel: 'left', tier: 'M', name: 'LF5 Upper M', wCm: '46×26', price: 1500, w: 0.46, h: 0.26, pos: [-0.94, 0.80, -0.95], normal: [-1,0.10,0], roll: 0 },
-    { id: 27, panel: 'left', tier: 'M', name: 'LF6 Upper M', wCm: '46×26', price: 1500, w: 0.46, h: 0.26, pos: [-0.94, 0.80, -0.52], normal: [-1,0.10,0], roll: 0 },
-    { id: 28, panel: 'left', tier: 'S', name: 'LF7 Above Handle', wCm: '26×16', price: 800, w: 0.26, h: 0.16, pos: [-0.93, 0.80, -0.14], normal: [-1,0.10,0], roll: 0 },
-    { id: 29, panel: 'left', tier: 'S', name: 'LF8 Below Handle', wCm: '26×16', price: 800, w: 0.26, h: 0.16, pos: [-0.93, 0.56, -0.14], normal: [-1,0.10,0], roll: 0 },
-    { id: 30, panel: 'left', tier: 'L', name: 'LF9 Door L', wCm: '60×34', price: 3000, w: 0.60, h: 0.34, pos: [-0.94, 0.68, 0.30], normal: [-1,0.10,0], roll: 0 },
-    { id: 31, panel: 'left', tier: 'S', name: 'LF10 Door S',wCm: '30×22', price: 800,  w: 0.30, h: 0.22, pos: [-0.94, 0.68, 0.78], normal: [-1,0.10,0], roll: 0 },
-    { id: 32, panel: 'left', tier: 'S', name: 'LF11 Front S',wCm: '30×22', price: 800,  w: 0.30, h: 0.22, pos: [-0.94, 0.68, 1.15], normal: [-1,0.10,0.25], roll: 0 },
-    { id: 33, panel: 'left', tier: 'M', name: 'LF12 Sill M', wCm: '46×22', price: 1500, w: 0.46, h: 0.22, pos: [-0.92, 0.44, -1.05], normal: [-1,0.08,0], roll: 0 },
-    { id: 34, panel: 'left', tier: 'S', name: 'LF13 Sill S', wCm: '30×20', price: 800,  w: 0.30, h: 0.20, pos: [-0.92, 0.44, -0.62], normal: [-1,0.08,0], roll: 0 },
-    { id: 35, panel: 'left', tier: 'M', name: 'LF14 Sill M', wCm: '46×22', price: 1500, w: 0.46, h: 0.22, pos: [-0.92, 0.44, -0.18], normal: [-1,0.08,0], roll: 0 },
-    { id: 36, panel: 'left', tier: 'S', name: 'LF15 Sill S', wCm: '30×20', price: 800,  w: 0.30, h: 0.20, pos: [-0.92, 0.44, 0.24], normal: [-1,0.08,0], roll: 0 },
-    { id: 37, panel: 'left', tier: 'M', name: 'LF16 Sill M', wCm: '46×22', price: 1500, w: 0.46, h: 0.22, pos: [-0.92, 0.44, 0.66], normal: [-1,0.08,0], roll: 0 },
-    { id: 38, panel: 'left', tier: 'S', name: 'LF17 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [-0.92, 0.30, -0.85], normal: [-1,0.08,0], roll: 0 },
-    { id: 39, panel: 'left', tier: 'S', name: 'LF18 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [-0.92, 0.30, -0.35], normal: [-1,0.08,0], roll: 0 },
-    { id: 40, panel: 'left', tier: 'S', name: 'LF19 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [-0.92, 0.30, 0.15], normal: [-1,0.08,0], roll: 0 },
-    { id: 41, panel: 'left', tier: 'S', name: 'LF20 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [-0.92, 0.30, 0.65], normal: [-1,0.08,0], roll: 0 },
-
-    // === RIGHT FLANK 20 (mirror) ===
-    { id: 42, panel: 'right', tier: 'M', name: 'RF1 Glass M', wCm: '40×26', price: 1500, w: 0.40, h: 0.26, pos: [0.92, 1.05, -0.55], normal: [1,0.10,0], roll: 0 },
-    { id: 43, panel: 'right', tier: 'L', name: 'RF2 Glass L', wCm: '56×30', price: 3000, w: 0.56, h: 0.30, pos: [0.92, 1.05, -0.05], normal: [1,0.10,0], roll: 0 },
-    { id: 44, panel: 'right', tier: 'L', name: 'RF3 Glass L', wCm: '56×30', price: 3000, w: 0.56, h: 0.30, pos: [0.92, 1.05, 0.42], normal: [1,0.10,0], roll: 0 },
-    { id: 45, panel: 'right', tier: 'S', name: 'RF4 Upper S', wCm: '30×20', price: 800,  w: 0.30, h: 0.20, pos: [0.94, 0.80, -1.35], normal: [1,0.10,0], roll: 0 },
-    { id: 46, panel: 'right', tier: 'M', name: 'RF5 Upper M', wCm: '46×26', price: 1500, w: 0.46, h: 0.26, pos: [0.94, 0.80, -0.95], normal: [1,0.10,0], roll: 0 },
-    { id: 47, panel: 'right', tier: 'M', name: 'RF6 Upper M', wCm: '46×26', price: 1500, w: 0.46, h: 0.26, pos: [0.94, 0.80, -0.52], normal: [1,0.10,0], roll: 0 },
-    { id: 48, panel: 'right', tier: 'S', name: 'RF7 Above Handle', wCm: '26×16', price: 800, w: 0.26, h: 0.16, pos: [0.93, 0.80, -0.14], normal: [1,0.10,0], roll: 0 },
-    { id: 49, panel: 'right', tier: 'S', name: 'RF8 Below Handle', wCm: '26×16', price: 800, w: 0.26, h: 0.16, pos: [0.93, 0.56, -0.14], normal: [1,0.10,0], roll: 0 },
-    { id: 50, panel: 'right', tier: 'L', name: 'RF9 Door L', wCm: '60×34', price: 3000, w: 0.60, h: 0.34, pos: [0.94, 0.68, 0.30], normal: [1,0.10,0], roll: 0 },
-    { id: 51, panel: 'right', tier: 'S', name: 'RF10 Door S',wCm: '30×22', price: 800,  w: 0.30, h: 0.22, pos: [0.94, 0.68, 0.78], normal: [1,0.10,0], roll: 0 },
-    { id: 52, panel: 'right', tier: 'S', name: 'RF11 Front S',wCm: '30×22', price: 800,  w: 0.30, h: 0.22, pos: [0.94, 0.68, 1.15], normal: [1,0.10,0.25], roll: 0 },
-    { id: 53, panel: 'right', tier: 'M', name: 'RF12 Sill M', wCm: '46×22', price: 1500, w: 0.46, h: 0.22, pos: [0.92, 0.44, -1.05], normal: [1,0.08,0], roll: 0 },
-    { id: 54, panel: 'right', tier: 'S', name: 'RF13 Sill S', wCm: '30×20', price: 800,  w: 0.30, h: 0.20, pos: [0.92, 0.44, -0.62], normal: [1,0.08,0], roll: 0 },
-    { id: 55, panel: 'right', tier: 'M', name: 'RF14 Sill M', wCm: '46×22', price: 1500, w: 0.46, h: 0.22, pos: [0.92, 0.44, -0.18], normal: [1,0.08,0], roll: 0 },
-    { id: 56, panel: 'right', tier: 'S', name: 'RF15 Sill S', wCm: '30×20', price: 800,  w: 0.30, h: 0.20, pos: [0.92, 0.44, 0.24], normal: [1,0.08,0], roll: 0 },
-    { id: 57, panel: 'right', tier: 'M', name: 'RF16 Sill M', wCm: '46×22', price: 1500, w: 0.46, h: 0.22, pos: [0.92, 0.44, 0.66], normal: [1,0.08,0], roll: 0 },
-    { id: 58, panel: 'right', tier: 'S', name: 'RF17 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [0.92, 0.30, -0.85], normal: [1,0.08,0], roll: 0 },
-    { id: 59, panel: 'right', tier: 'S', name: 'RF18 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [0.92, 0.30, -0.35], normal: [1,0.08,0], roll: 0 },
-    { id: 60, panel: 'right', tier: 'S', name: 'RF19 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [0.92, 0.30, 0.15], normal: [1,0.08,0], roll: 0 },
-    { id: 61, panel: 'right', tier: 'S', name: 'RF20 Low S',  wCm: '34×14', price: 800,  w: 0.34, h: 0.14, pos: [0.92, 0.30, 0.65], normal: [1,0.08,0], roll: 0 },
-
-    // === REAR 14 === 2 L 6000 +4 M 6000 +8 S 6400 = 18,400 (cumulative 128,900)
-    { id: 62, panel: 'rear', tier: 'M', name: 'B1 Engine M', wCm: '34×22', price: 1500, w: 0.34, h: 0.22, pos: [-0.36, 1.10, -1.80], normal: [0,0.72,-0.70], roll: 0 },
-    { id: 63, panel: 'rear', tier: 'M', name: 'B2 Engine M', wCm: '34×22', price: 1500, w: 0.34, h: 0.22, pos: [0, 1.10, -1.80], normal: [0,0.72,-0.70], roll: 0 },
-    { id: 64, panel: 'rear', tier: 'M', name: 'B3 Engine M', wCm: '34×22', price: 1500, w: 0.34, h: 0.22, pos: [0.36, 1.10, -1.80], normal: [0,0.72,-0.70], roll: 0 },
-    { id: 65, panel: 'rear', tier: 'M', name: 'B4 Decklid M',wCm: '30×20', price: 1500, w: 0.30, h: 0.20, pos: [-0.44, 0.96, -2.00], normal: [0,0.45,-0.88], roll: 0 },
-    { id: 66, panel: 'rear', tier: 'L', name: 'B5 Decklid L',wCm: '56×24', price: 3000, w: 0.56, h: 0.24, pos: [0, 0.96, -2.00], normal: [0,0.45,-0.88], roll: 0 },
-    { id: 67, panel: 'rear', tier: 'M', name: 'B6 Decklid M',wCm: '30×20', price: 1500, w: 0.30, h: 0.20, pos: [0.44, 0.96, -2.00], normal: [0,0.45,-0.88], roll: 0 },
-    { id: 68, panel: 'rear', tier: 'L', name: 'B7 Between Lights',wCm: '96×18',price: 3000, w: 0.96, h: 0.18, pos: [0, 0.72, -2.22], normal: [0,0.12,-1], roll: 0 },
-    { id: 69, panel: 'rear', tier: 'L', name: 'B8 Bumper XL',wCm: '100×30',price: 3000, w: 1.00, h: 0.30, pos: [0, 0.50, -2.24], normal: [0,0.08,-1], roll: 0 },
-    { id: 70, panel: 'rear', tier: 'S', name: 'B9 Bumper S', wCm: '22×14', price: 800,  w: 0.22, h: 0.14, pos: [-0.62, 0.32, -2.22], normal: [0,0.08,-1], roll: 0 },
-    { id: 71, panel: 'rear', tier: 'S', name: 'B10 Bumper S',wCm: '30×16', price: 800,  w: 0.30, h: 0.16, pos: [-0.34, 0.32, -2.22], normal: [0,0.08,-1], roll: 0 },
-    { id: 72, panel: 'rear', tier: 'S', name: 'B11 Bumper S',wCm: '30×16', price: 800,  w: 0.30, h: 0.16, pos: [0.34, 0.32, -2.22], normal: [0,0.08,-1], roll: 0 },
-    { id: 73, panel: 'rear', tier: 'S', name: 'B12 Bumper S',wCm: '22×14', price: 800,  w: 0.22, h: 0.14, pos: [0.62, 0.32, -2.22], normal: [0,0.08,-1], roll: 0 },
-    { id: 74, panel: 'rear', tier: 'S', name: 'B13 Diffuser S',wCm: '26×12',price: 800,  w: 0.26, h: 0.12, pos: [-0.50, 0.20, -2.15], normal: [0,0.08,-1], roll: 0 },
-    { id: 75, panel: 'rear', tier: 'S', name: 'B14 Diffuser S',wCm: '26×12',price: 800,  w: 0.26, h: 0.12, pos: [0.50, 0.20, -2.15], normal: [0,0.08,-1], roll: 0 },
-
-    // === FRONT BUMPER 13 === 1 M 1500 +6 S 4800 +6 XS 250*6=1500 (XS outside maths, priced zones 6300 => cumulative 135,200? adjust)
-    // Front priced: P1 M 1500 + P2-7 S 6*800=4800 =6300 (cumulative 135,200) — need 135,000 exactly so adjust one S to 600
-    { id: 76, panel: 'front', tier: 'M',  name: 'P1 Front M', wCm: '44×20', price: 1500, w: 0.44, h: 0.20, pos: [0, 0.60, 2.12], normal: [0,0.10,1], roll: 0 },
-    { id: 77, panel: 'front', tier: 'S',  name: 'P2 Front S', wCm: '26×14', price: 800, w: 0.26, h: 0.14, pos: [-0.66, 0.44, 2.14], normal: [0,0.10,1], roll: 0 },
-    { id: 78, panel: 'front', tier: 'S',  name: 'P3 Front S', wCm: '26×14', price: 800, w: 0.26, h: 0.14, pos: [-0.34, 0.44, 2.14], normal: [0,0.10,1], roll: 0 },
-    { id: 79, panel: 'front', tier: 'S',  name: 'P4 Front S', wCm: '26×14', price: 800, w: 0.26, h: 0.14, pos: [0.34, 0.44, 2.14], normal: [0,0.10,1], roll: 0 },
-    { id: 80, panel: 'front', tier: 'S',  name: 'P5 Front S', wCm: '26×14', price: 800, w: 0.26, h: 0.14, pos: [0.66, 0.44, 2.14], normal: [0,0.10,1], roll: 0 },
-    { id: 81, panel: 'front', tier: 'S',  name: 'P6 Front S', wCm: '26×14', price: 800, w: 0.26, h: 0.14, pos: [-0.50, 0.26, 2.15], normal: [0,0.10,1], roll: 0 },
-    { id: 82, panel: 'front', tier: 'S',  name: 'P7 Front S', wCm: '26×14', price: 800, w: 0.26, h: 0.14, pos: [0.50, 0.26, 2.15], normal: [0,0.10,1], roll: 0 },
-    // XS on-ramp — $250 each, outside $135k maths
-    { id: 83, panel: 'front', tier: 'XS', name: 'P8 XS', wCm: '18×10', price: 250, w: 0.18, h: 0.10, pos: [-0.60, 0.26, 2.16], normal: [0,0.10,1], roll: 0 },
-    { id: 84, panel: 'front', tier: 'XS', name: 'P9 XS', wCm: '18×10', price: 250, w: 0.18, h: 0.10, pos: [-0.36, 0.26, 2.16], normal: [0,0.10,1], roll: 0 },
-    { id: 85, panel: 'front', tier: 'XS', name: 'P10 XS',wCm: '18×10', price: 250, w: 0.18, h: 0.10, pos: [-0.12, 0.26, 2.16], normal: [0,0.10,1], roll: 0 },
-    { id: 86, panel: 'front', tier: 'XS', name: 'P11 XS',wCm: '18×10', price: 250, w: 0.18, h: 0.10, pos: [0.12, 0.26, 2.16], normal: [0,0.10,1], roll: 0 },
-    { id: 87, panel: 'front', tier: 'XS', name: 'P12 XS',wCm: '18×10', price: 250, w: 0.18, h: 0.10, pos: [0.36, 0.26, 2.16], normal: [0,0.10,1], roll: 0 },
-    { id: 88, panel: 'front', tier: 'XS', name: 'P13 XS',wCm: '18×10', price: 250, w: 0.18, h: 0.10, pos: [0.60, 0.26, 2.16], normal: [0,0.10,1], roll: 0 },
-  ]
+  spots: ZONES,
+  tiers: TIERS,
+  panels: PANELS,
+  panelLabel: PANEL_LABEL,
 };
-// assert helper — run in console or test: CONFIG.spots.filter(s=>s.tier!=='XS').reduce((a,b)=>a+b.price,0) === 135000
+
+export { ZONES, TIERS, GOAL, PANELS, PANEL_LABEL, askTotal, tally };
