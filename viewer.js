@@ -647,7 +647,7 @@ function fitLens() {
   // A tall frame puts the car low and leaves sky above it. Raise what the camera looks at so
   // the car sits in the middle of the shot on a phone the way it does on a laptop.
   if (controls) {
-    const lift = aspect >= 1.5 ? 0 : THREE.MathUtils.clamp((1.5 - aspect) * 0.34, 0, 0.34);
+    const lift = aspect >= 1.5 ? 0 : THREE.MathUtils.clamp((1.5 - aspect) * 0.12, 0, 0.12);
     controls.target.y = baseTargetY + lift;
   }
 }
@@ -700,7 +700,11 @@ function animate() {
 export function setPanel(panel) { activePanel = panel; cameraDirty = true; }
 
 const VIEWS = {
-  hero:  { pos: [0, 1.35, 4.6],   target: [0, 0.66, 0] },      // whole car, turntable centred on it
+  // Whole car, turntable centred on it. Distance, elevation and aim were picked by projecting
+  // the real mesh into this frame rather than by eye: aiming at 0.66 put the car's bulk in the
+  // bottom half and hung the front bumper off the edge, because from a low angle the near end
+  // of a 4.5m car looms. Aiming lower recentres it and lets the camera come in.
+  hero:  { pos: [0, 1.02, 4.54],  target: [0, 0.30, 0] },
   top:   { pos: [0, 5.0, 0.25],   target: [0, 0.8, 0] },
   hood:  { pos: [0, 2.5, 3.0],    target: [0, 0.78, 1.5] },
   front: { pos: [0, 1.35, 4.2],   target: [0, 0.62, 1.7] },

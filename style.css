@@ -42,12 +42,14 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 .btn.wide{width:100%;margin-top:14px}
 
 /* hero */
-.hero{max-width:var(--max);margin:0 auto;padding:26px 16px 8px}
-.hero h1{font-size:clamp(38px,8.5vw,76px);line-height:.94;margin:10px 0 12px}
+/* Centred, and kept short on purpose: the car is the product, so it has to be on the first
+   screen. Everything here is measured against that — see the stage height below. */
+.hero{max-width:var(--max);margin:0 auto;padding:20px 16px 6px;text-align:center}
+.hero h1{font-size:clamp(34px,5.4vw,64px);line-height:1.02;margin:6px 0 10px;text-wrap:balance}
 .finish-line{font-family:"Space Grotesk",Inter,sans-serif;font-size:clamp(17px,2.6vw,24px);
   font-weight:700;letter-spacing:-.02em;margin:0 0 10px}
-.hero .lede{max-width:52ch;font-size:clamp(16px,2.2vw,20px);line-height:1.4;margin:0 0 18px;color:var(--ink)}
-.hero .sub{max-width:64ch;color:var(--muted);font-size:15px;margin:0}
+.hero .lede{max-width:46ch;font-size:clamp(15px,1.9vw,19px);line-height:1.4;margin:0 auto 14px;
+  color:var(--muted);text-wrap:balance}
 
 /* The pitch, under the car: one line of what this is, one of where it goes, then the ask.
    Centred and given room, because it is the only place on the page asking for a decision. */
@@ -65,7 +67,7 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
   border:1px solid var(--line);background:#f2f2f4}
 .dream figcaption{margin-top:10px;font-size:14px;color:var(--muted)}
 .hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.meter{margin-top:18px;border:1px solid var(--line);background:#fff;border-radius:var(--radius);padding:14px}
+.meter{max-width:600px;margin:0 auto;border:1px solid var(--line);background:#fff;border-radius:var(--radius);padding:13px}
 .meter-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px}
 .meter-top b{font-size:20px;font-variant-numeric:tabular-nums}
 .over{color:var(--green);font-weight:800}
@@ -76,10 +78,13 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 
 /* stage */
 .stage-wrap{max-width:var(--max);margin:0 auto;padding:12px 16px}
-.stage{position:relative;height:min(74vh,720px);min-height:360px;overflow:hidden;border-radius:22px;
+/* Sized from what the hero actually leaves behind, so the whole car lands on the first
+   screen at any height rather than only on a tall one. The subtrahend is the measured cost
+   of nav + hero + padding; if the hero grows, this has to grow with it. */
+.stage{position:relative;height:clamp(340px,calc(100vh - 378px),640px);overflow:hidden;border-radius:22px;
   border:1px solid var(--line);
   background:radial-gradient(120% 90% at 50% 12%,#ffffff 0%,#f7f6f2 46%,#eceae4 100%)}
-@media(max-width:640px){.stage{height:min(62vh,520px);min-height:320px;border-radius:18px}}
+@media(max-width:640px){.stage{height:clamp(300px,calc(100svh - 340px),520px);border-radius:18px}}
 .stage canvas{display:block;width:100%;height:100%;touch-action:none}
 .viewbar{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 24px)}
 .viewbar button{border:1px solid var(--line);background:rgba(255,255,255,.86);backdrop-filter:blur(10px);
@@ -224,18 +229,16 @@ h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;letter-spacing:-
 
 /* ── phone: the car is the product, so it has to be on the first screen ─────── */
 @media(max-width:640px){
-  .hero{padding:14px 16px 4px}
-  .hero h1{font-size:clamp(30px,10vw,40px);margin:6px 0 8px}
+  .hero{padding:12px 16px 4px}
+  .hero h1{font-size:clamp(28px,9vw,38px);margin:5px 0 7px}
   .finish-line{font-size:16px;margin:0 0 8px}
-  .hero .lede{font-size:15px;margin:0 0 10px}
+  .hero .lede{font-size:14px;margin:0 auto 10px}
   .pitch{padding:28px 16px 4px}
   .pitch-lead{font-size:19px;margin-bottom:12px}
   .pitch-sub{font-size:15px;margin-bottom:12px}
   .dream{margin-top:26px}
   .dream figcaption{font-size:13px;margin-top:8px}
-  /* three lines of the pitch, then the car. The rest is still there for anyone who scrolls. */
-  .hero .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px}
-  .meter{margin-top:12px;padding:11px}
+  .meter{padding:11px}
   .meter-top b{font-size:17px}
   .hero-cta{margin-top:10px;gap:8px}
   .hero-cta .btn{padding:9px 14px;font-size:12px}
