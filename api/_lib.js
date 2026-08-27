@@ -82,6 +82,13 @@ export async function uploadArtwork(purchaseId, dataUrl) {
  *  real credentials are rejected. */
 export const paypalMode = () => /^(live|production|prod)$/i.test(env('PAYPAL_ENV')) ? 'live' : 'sandbox';
 
+/** Demo mode: the whole flow runs, PayPal is never called, nothing is charged. For trying the
+ *  site out on a preview deployment without a PayPal account. It is deliberately loud — the
+ *  page carries a banner and /api/health leads with it — because a site that quietly gives
+ *  zones away is worse than one that is down. Never set DEMO_MODE in production. */
+export const demoMode = () => /^(1|true|on|yes)$/i.test(env('DEMO_MODE'));
+export const DEMO_PREFIX = 'DEMO-';
+
 export const paypalBase = () =>
   // PAYPAL_API_BASE points the whole integration at a stand-in, which is how the checkout is
   // exercised end to end without touching PayPal. Never set it in production.

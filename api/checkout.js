@@ -8,7 +8,7 @@
 // The amount comes from zones.js on this server. Nothing in the request body sets a price.
 
 import { zone, sb, sbRpc, uploadArtwork, paypal, json, route, money, env,
-         HttpError, websiteOf } from './_lib.js';
+         HttpError, websiteOf, demoMode, DEMO_PREFIX } from './_lib.js';
 
 export const config = { api: { bodyParser: { sizeLimit: '5mb' } } };   // artwork rides along
 
@@ -53,6 +53,22 @@ export default route(async (req, res) => {
   try {
     const artworkUrl = await uploadArtwork(purchase.id, b.artwork);
     const origin = (env('SITE_URL') || `https://${req.headers.host}`).replace(/\/$/, '');
+
+    // Demo: everything above this line already happened — the zone is really held, the
+    // artwork is really uploaded, and the price still came from the server. Only the money
+    // is skipped, so what gets tested is the actual path and not a mock of it.
+    if (demoMode()) {
+      await sb(`purchases?id=eq.${purchase.id}`, {
+        method: 'PATCH',
+        body: { artwork_url: artworkUrl, paypal_order_id: DEMO_PREFIX + purchase.id },
+      });
+      return json(res, 200, {
+        purchaseId: purchase.id,
+        orderId: DEMO_PREFIX + purchase.id,
+        approveUrl: `${origin}/api/return?purchase=${purchase.id}`,
+        zone: z.id, amount: money(z.price * 100), currency, holdMinutes, demo: true,
+      });
+    }
 
     const order = await paypal('/v2/checkout/orders', {
       method: 'POST',

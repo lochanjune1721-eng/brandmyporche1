@@ -26,6 +26,8 @@ const body = req => new Promise(r => {
 const matches = (row, filters) => filters.every(([col, op, val]) =>
   op === 'eq' ? String(row[col]) === val
   : op === 'in' ? val.replace(/[()]/g, '').split(',').includes(String(row[col]))
+  // PostgREST spells the SQL wildcard `*` in a URL and turns it into `%`.
+  : op === 'like' ? new RegExp('^' + val.split('*').map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$').test(String(row[col]))
   : true);
 
 http.createServer(async (req, res) => {
@@ -51,6 +53,11 @@ http.createServer(async (req, res) => {
       const row = { id: 'p' + (++n), created_at: new Date().toISOString(), ...incoming };
       rows.push(row);
       return send(res, 201, [row]);
+    }
+    if (req.method === 'DELETE') {
+      const doomed = rows.filter(r => matches(r, filters));
+      for (const r of doomed) rows.splice(rows.indexOf(r), 1);
+      return send(res, 204, null);
     }
     if (req.method === 'PATCH') {
       const patch = JSON.parse(raw);

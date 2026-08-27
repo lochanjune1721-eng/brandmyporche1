@@ -1,7 +1,7 @@
 // GET /api/zones — which zones are gone, and who has them.
 // The only thing the browser learns about the database, and it is all public information.
 
-import { sb, sbRpc, json, route } from './_lib.js';
+import { sb, sbRpc, json, route, demoMode } from './_lib.js';
 
 export default route(async (req, res) => {
   if (req.method !== 'GET') return json(res, 405, { error: 'GET only' });
@@ -20,5 +20,5 @@ export default route(async (req, res) => {
     }
   }
   res.setHeader('Cache-Control', 'no-store');
-  json(res, 200, { sold, held, serverTime: new Date().toISOString() });
+  json(res, 200, { sold, held, serverTime: new Date().toISOString(), demo: demoMode() || undefined });
 });

@@ -152,3 +152,19 @@ means the key pair is not valid for the environment `PAYPAL_ENV` names. In order
 
 Porsche® and 911® are trademarks of Dr. Ing. h.c. F. Porsche AG. This project is not
 affiliated with Porsche. The 3D model is CC0 (Sketchfab).
+
+## Trying it without paying
+
+Set `DEMO_MODE=1` on a preview deployment. The whole purchase path runs — the zone is held on
+the same unique index, the artwork is uploaded to the same bucket, the price still comes from
+`zones.js` on the server, the logo goes on the car and the board updates for every visitor —
+and PayPal is simply never called. No PayPal account is needed; `/api/health` stops asking for
+credentials and says so.
+
+While it is on, the page carries a fixed banner that cannot be dismissed, `/api/zones` reports
+`demo: true`, and the status pill reads *Demo* rather than *Live*. `/api/demo-reset?redirect=1`
+deletes every demo purchase and puts the board back to empty.
+
+The guard runs both ways, so leaving the flag in the wrong state cannot cost anyone a zone: a
+demo order carries a `DEMO-` order id and will not complete unless `DEMO_MODE` is on, and
+`/api/demo-reset` returns 404 unless it is. Never set it on production.
