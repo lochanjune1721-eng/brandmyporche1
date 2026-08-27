@@ -26,6 +26,8 @@ const PANEL_PLAN = {
   right: {          XL: 1, L: 2, M: 5, S: 13, XS: 3, total: 24 },
   rear:  {                 L: 2, M: 4, S: 8,  total: 14 },
   front: {                       M: 1, S: 2,  total: 3  },
+  // The badge band and the diffuser are 8cm and 5cm tall. Nothing that is not a stripe fits
+  // them, so nothing is sold there — that is why the rear is fourteen and not more.
 };
 
 // ── the money ────────────────────────────────────────────────────────────────
@@ -101,6 +103,28 @@ test('the flanks mirror each other exactly', () => {
     assert.equal(r.w, l.w);
     assert.equal(r.h, l.h);
   });
+});
+
+test('nothing on the car is a stripe', () => {
+  // A long thin zone reads as damage on the paint rather than as inventory, whatever it costs.
+  // This is the rule that the front, the rear deck and the flanks were all breaking.
+  for (const z of ZONES) {
+    const ratio = z.w / z.h;
+    assert.ok(ratio <= 2.4, `${z.id} is ${z.wCm}cm — ${ratio.toFixed(1)}:1, too long and thin`);
+    assert.ok(ratio >= 0.6, `${z.id} is ${z.wCm}cm — ${ratio.toFixed(1)}:1, too tall and narrow`);
+  }
+});
+
+test('a zone is read the right way round from wherever you look at it', () => {
+  // The engine lid is found by a ray from above but looked at from behind, so its labels come
+  // out mirrored if it is probed like the hood. Anything on the rear must use the deck probe.
+  for (const z of ZONES) {
+    if (z.panel === 'rear' && z.probe === 'down') {
+      assert.fail(`${z.id} is on the rear but probed 'down' — its text will print back to front`);
+    }
+  }
+  assert.deepEqual(PROBE.deck.axisU, [-1, 0, 0], 'the deck reads right-to-left from behind');
+  assert.deepEqual(PROBE.deck.axisV, [0, 0, 1], 'and forward is up the screen');
 });
 
 test('the nose carries three zones, the same size as the rest of the car', () => {
@@ -234,7 +258,7 @@ test('no zone crosses a keep-out — plate, handle, arch, light, grille or shut 
 test('glass zones are declared, and only where there is glass', () => {
   const onGlass = ZONES.filter(z => z.on.includes('glass')).map(z => z.id).sort();
   assert.deepEqual(onGlass,
-    ['LF1', 'LF2', 'LF3', 'RF1', 'RF2', 'RF3', 'R8', 'R9', 'R10', 'R11', 'R12'].sort());
+    ['LF1', 'LF2', 'LF3', 'LF4', 'RF1', 'RF2', 'RF3', 'RF4', 'R10', 'R11', 'R12'].sort());
 });
 
 // ── the maths of the frame itself ────────────────────────────────────────────

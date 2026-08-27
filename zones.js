@@ -48,6 +48,10 @@ export const PANEL_LABEL = {
  *  decal's local +X and +Y, chosen so text reads upright in that panel's view. */
 export const PROBE = {
   down:  { origin: (u, v) => [u, 3.2, v],  ray: [0, -1, 0], axisU: [1, 0, 0],  axisV: [0, 0, -1] },
+  // Same ray, opposite reading. A decal on the engine lid is found from above but looked at
+  // from behind, where screen-right is −X and screen-up is +Z. Probing it with `down` is what
+  // printed the rear labels back to front.
+  deck:  { origin: (u, v) => [u, 3.2, v],  ray: [0, -1, 0], axisU: [-1, 0, 0], axisV: [0, 0, 1]  },
   left:  { origin: (u, v) => [-3.2, v, u], ray: [1, 0, 0],  axisU: [0, 0, 1],  axisV: [0, 1, 0]  },
   right: { origin: (u, v) => [3.2, v, u],  ray: [-1, 0, 0], axisU: [0, 0, -1], axisV: [0, 1, 0]  },
   rear:  { origin: (u, v) => [u, v, -5],   ray: [0, 0, 1],  axisU: [-1, 0, 0], axisV: [0, 1, 0]  },
@@ -81,120 +85,102 @@ const ROWS = [
     { id: 'H11', tier: 'S',   u:  0.44, w: 0.14 },
   ]},
 
-  // ── ROOF, 10 ── the 911 roof is short: metal runs z 0.13→−1.02 only. Rows 5 and 6 sit on
-  // the rear glass (z −1.06→−1.68), which is where a rear-window banner goes anyway.
-  { panel: 'roof', probe: 'down', v: -0.02, h: 0.16, name: 'Roof — front pair', zones: [
-    { id: 'R1',  tier: 'M',   u: -0.20, w: 0.32 },
-    { id: 'R2',  tier: 'M',   u:  0.20, w: 0.32 },
+  // ── ROOF, 12 ── metal runs z 0.13→−1.02; the last row sits on the rear glass, which is
+  // where a rear-window banner goes anyway. Rows are cut deep so an XL can be an XL rather
+  // than a 96×22 smear.
+  { panel: 'roof', probe: 'down', v: -0.02, h: 0.26, name: 'Roof — hero row', zones: [
+    { id: 'R1', tier: 'M',  u: -0.35, w: 0.24 },
+    { id: 'R2', tier: 'XL', u:  0.00, w: 0.42 },
+    { id: 'R3', tier: 'M',  u:  0.35, w: 0.24 },
   ]},
-  { panel: 'roof', probe: 'down', v: -0.28, h: 0.22, name: 'Roof — hero', zones: [
-    { id: 'R3',  tier: 'XL',  u:  0.00, w: 0.96 },
+  { panel: 'roof', probe: 'down', v: -0.36, h: 0.24, name: 'Roof — middle row', zones: [
+    { id: 'R4', tier: 'M', u: -0.34, w: 0.24 },
+    { id: 'R5', tier: 'L', u:  0.00, w: 0.40 },
+    { id: 'R6', tier: 'M', u:  0.34, w: 0.24 },
   ]},
-  { panel: 'roof', probe: 'down', v: -0.55, h: 0.20, name: 'Roof — middle trio', zones: [
-    { id: 'R4',  tier: 'M',   u: -0.36, w: 0.22 },
-    { id: 'R5',  tier: 'L',   u:  0.00, w: 0.44 },
-    { id: 'R6',  tier: 'M',   u:  0.36, w: 0.22 },
+  { panel: 'roof', probe: 'down', v: -0.70, h: 0.24, name: 'Roof — third row', zones: [
+    { id: 'R7', tier: 'S', u: -0.33, w: 0.20, h: 0.17 },
+    { id: 'R8', tier: 'L', u:  0.00, w: 0.38 },
+    { id: 'R9', tier: 'S', u:  0.33, w: 0.20, h: 0.17 },
   ]},
-  { panel: 'roof', probe: 'down', v: -0.81, h: 0.18, name: 'Roof — second hero', zones: [
-    { id: 'R7',  tier: 'L',   u:  0.00, w: 0.80 },
-  ]},
-  { panel: 'roof', probe: 'down', v: -1.24, h: 0.15, on: 'rear glass', name: 'Roof — rear glass row', zones: [
-    { id: 'R8',  tier: 'S',   u: -0.30, w: 0.16 },
-    { id: 'R9',  tier: 'S',   u: -0.10, w: 0.16 },
-    { id: 'R11', tier: 'S',   u:  0.10, w: 0.16 },
-    { id: 'R12', tier: 'S',   u:  0.30, w: 0.16 },
-  ]},
-  { panel: 'roof', probe: 'down', v: -1.46, h: 0.12, on: 'rear glass', name: 'Roof — spine strip', zones: [
-    { id: 'R10', tier: 'S',   u:  0.00, w: 0.56 },
+  // A rear-window banner is read from behind, not from above, so it takes the deck probe too.
+  { panel: 'roof', probe: 'deck', v: -1.25, h: 0.19, on: 'rear glass', name: 'Roof — rear glass', zones: [
+    { id: 'R10', tier: 'S', u: -0.26, w: 0.24 },
+    { id: 'R11', tier: 'S', u:  0.00, w: 0.24 },
+    { id: 'R12', tier: 'S', u:  0.26, w: 0.24 },
   ]},
 
-  // ── FLANKS, 20 a side ── mirrored below by mirrorFlank(). Keep-outs that shape this:
-  // mirror body (z 0.10→0.42 above y 0.83), front arch (z 0.98→1.60 below y 0.70),
-  // rear arch (z −1.62→−0.98 below y 0.70), door handle (z −0.30→−0.02, y 0.70→0.82).
-  { panel: 'left', probe: 'left', v: 1.03, h: 0.13, on: 'side glass', name: 'Left — glass band', zones: [
-    { id: 'LF1',  tier: 'S',  u: -0.81, w: 0.30 },
-    { id: 'LF2',  tier: 'L',  u: -0.34, w: 0.36 },
-    { id: 'LF3',  tier: 'L',  u:  0.05, w: 0.34 },
+  // ── FLANKS, 24 a side ── mirrored below by mirrorFlank(). Keep-outs that shape this:
+  // mirror body (z 0.08→0.44 above y 0.83), front arch (z 0.92→1.66 below y 0.70), rear arch
+  // (z −1.70→−0.92 below y 0.70), door handle (z −0.08→0.16, y 0.70→0.84), and the two door
+  // shut lines. Each band now uses its full height, so nothing here is a stripe.
+  { panel: 'left', probe: 'left', v: 1.03, h: 0.135, on: 'side glass', name: 'Left — glass band', zones: [
+    { id: 'LF1', tier: 'S', u: -0.80, w: 0.20 },   // the quarter light, aft of the B-pillar
+    { id: 'LF2', tier: 'S', u: -0.38, w: 0.20 },
+    { id: 'LF3', tier: 'S', u: -0.12, w: 0.20 },
+    { id: 'LF4', tier: 'S', u:  0.14, w: 0.20 },
   ]},
-  { panel: 'left', probe: 'left', v: 0.762, h: 0.09, name: 'Left — shoulder band', zones: [
-    { id: 'LF4',  tier: 'S',  u: -1.50, w: 0.28 },
-    { id: 'LF5',  tier: 'M',  u: -1.10, w: 0.38 },
-    { id: 'LF6',  tier: 'M',  u: -0.25, w: 0.30 },   // stops short of the rear haunch bulge
-    { id: 'LF7',  tier: 'S',  u:  0.50, w: 0.26 },   // gap ahead of it is the handle, gap behind the mirror
-    { id: 'LF8',  tier: 'S',  u:  1.16, w: 0.28 },
+  { panel: 'left', probe: 'left', v: 0.768, h: 0.11, name: 'Left — shoulder band', zones: [
+    { id: 'LF5',  tier: 'S', u: -1.52, w: 0.22 },
+    { id: 'LF6',  tier: 'S', u: -1.26, w: 0.22 },
+    { id: 'LF7',  tier: 'S', u: -1.00, w: 0.22 },
+    { id: 'LF8',  tier: 'S', u: -0.74, w: 0.22 },
+    { id: 'LF9',  tier: 'S', u: -0.30, w: 0.22 },   // between the two shut lines
+    { id: 'LF10', tier: 'S', u:  0.52, w: 0.22 },   // clear of the handle and the mirror
+    { id: 'LF11', tier: 'S', u:  0.76, w: 0.20 },   // and short of the front shut line
+    { id: 'LF12', tier: 'S', u:  1.14, w: 0.22 },
   ]},
-  { panel: 'left', probe: 'left', v: 0.59, h: 0.14, name: 'Left — door band', zones: [
-    { id: 'LF9',  tier: 'M',  u: -0.755, w: 0.27 },
-    { id: 'LF10', tier: 'S',  u: -0.36, w: 0.24 },
-    { id: 'LF11', tier: 'XL', u:  0.18, w: 0.60 },   // the door. Biggest flat panel on the car.
-    { id: 'LF12', tier: 'S',  u:  0.70, w: 0.28 },
+  { panel: 'left', probe: 'left', v: 0.578, h: 0.23, name: 'Left — door band', zones: [
+    { id: 'LF13', tier: 'L',  u: -0.76, w: 0.28, h: 0.20 },
+    { id: 'LF14', tier: 'XL', u: -0.10, w: 0.52 },   // the door. Biggest flat panel on the car.
+    { id: 'LF15', tier: 'L',  u:  0.46, w: 0.28, h: 0.20 },
+    { id: 'LF16', tier: 'S',  u:  0.76, w: 0.22, h: 0.16 },
   ]},
-  { panel: 'left', probe: 'left', v: 0.425, h: 0.11, name: 'Left — sill band', zones: [
-    { id: 'LF13', tier: 'S',  u: -0.75, w: 0.26 },
-    { id: 'LF14', tier: 'S',  u: -0.38, w: 0.24 },
-    { id: 'LF15', tier: 'M',  u: -0.02, w: 0.36 },
-    { id: 'LF16', tier: 'S',  u:  0.34, w: 0.24 },
-    { id: 'LF17', tier: 'M',  u:  0.66, w: 0.30 },
+  { panel: 'left', probe: 'left', v: 0.385, h: 0.13, name: 'Left — sill band', zones: [
+    { id: 'LF17', tier: 'M', u: -0.76, w: 0.26 },
+    { id: 'LF18', tier: 'M', u: -0.36, w: 0.24 },
+    { id: 'LF19', tier: 'M', u: -0.06, w: 0.24 },
+    { id: 'LF20', tier: 'M', u:  0.32, w: 0.26 },
+    { id: 'LF21', tier: 'M', u:  0.68, w: 0.26 },
   ]},
-  { panel: 'left', probe: 'left', v: 0.205, h: 0.045, name: 'Left — the $250 cluster', zones: [
-    { id: 'LF21', tier: 'XS', u: 0.28, w: 0.062 },
-    { id: 'LF22', tier: 'XS', u: 0.38, w: 0.062 },
-    { id: 'LF23', tier: 'XS', u: 0.48, w: 0.062 },
-  ]},
-  { panel: 'left', probe: 'left', v: 0.30, h: 0.09, name: 'Left — rocker band', zones: [
-    { id: 'LF18', tier: 'S',  u: -0.75, w: 0.28 },
-    { id: 'LF19', tier: 'S',  u: -0.40, w: 0.20 },
-    { id: 'LF24', tier: 'S',  u: -0.02, w: 0.36 },
-    { id: 'LF20', tier: 'S',  u:  0.56, w: 0.44 },
-  ]},
-
-  // ── REAR, 14 ── the surface every car behind you reads at every light.
-  // Number plate is x ±0.27, y 0.33→0.53 — routed around, never crossed.
-  // Tail-light strip is y 0.68→0.78 full width — same.
-  { panel: 'rear', probe: 'down', v: -1.805, h: 0.09, name: 'Rear — engine lid', zones: [
-    { id: 'B1',  tier: 'S',   u: -0.42, w: 0.22 },
-    { id: 'B2',  tier: 'L',   u:  0.00, w: 0.52 },
-    { id: 'B3',  tier: 'S',   u:  0.42, w: 0.22 },
-  ]},
-  { panel: 'rear', probe: 'down', v: -2.055, h: 0.085, name: 'Rear — spoiler shelf', zones: [
-    { id: 'B4',  tier: 'S',   u: -0.31, w: 0.20 },
-    { id: 'B5',  tier: 'S',   u:  0.00, w: 0.30 },
-    { id: 'B6',  tier: 'S',   u:  0.31, w: 0.20 },
-  ]},
-  { panel: 'rear', probe: 'rear', v: 0.606, h: 0.076, name: 'Rear — badge band', zones: [
-    { id: 'B7',  tier: 'L',   u:  0.00, w: 0.94 },   // under the light bar, over the badges
-  ]},
-  { panel: 'rear', probe: 'rear', v: 0.435, h: 0.15, name: 'Rear — plate flanks', zones: [
-    { id: 'B8',  tier: 'M',   u: -0.71, w: 0.18 },
-    { id: 'B9',  tier: 'M',   u: -0.45, w: 0.26 },
-    { id: 'B10', tier: 'M',   u:  0.45, w: 0.26 },
-    { id: 'B11', tier: 'M',   u:  0.71, w: 0.18 },
-  ]},
-  { panel: 'rear', probe: 'rear', v: 0.278, h: 0.052, name: 'Rear — lower bumper', zones: [
-    { id: 'B12', tier: 'S',   u: -0.73, w: 0.16 },
-    { id: 'B13', tier: 'S',   u:  0.00, w: 0.40 },
-    { id: 'B14', tier: 'S',   u:  0.73, w: 0.16 },
+  // The rocker crowns about 3cm across its height. A sticker does not care; a 24cm plate would
+  // sit on it badly. So this band carries the $250 row and nothing larger.
+  { panel: 'left', probe: 'left', v: 0.255, h: 0.07, name: 'Left — the $250 row', zones: [
+    { id: 'LF22', tier: 'XS', u: 0.30, w: 0.08 },
+    { id: 'LF23', tier: 'XS', u: 0.44, w: 0.08 },
+    { id: 'LF24', tier: 'XS', u: 0.58, w: 0.08 },
   ]},
 
-  // ── FRONT BUMPER, 13 ── motorsport contingency band: one dense row across the nose,
-  // then the $250 row along the splitter lip. Plate (x ±0.27, y 0.30→0.44), grilles and
-  // head/fog-light glass are all routed around.
-  // The nose only offers a shallow strip: the plate caps it at y 0.445, the headlights at
-  // y 0.59, the fog lenses at |x| 0.51. Long thin zones fit that strip but read as a smear on
-  // the car, so these are cut short and square instead — smaller, but they look like something
-  // you would buy. Sizes here are the strip's, not the door's; the price is for the position.
-  // Five zones, and that is the lot. The strip across the nose is 9cm tall out at the corners
-  // and 14cm in the middle, so the centre M is cut taller than its neighbours — deliberately,
-  // the way a lead sponsor sits on a race car. Thirteen zones in here looked like damage;
-  // five look like inventory.
-  // Three zones, at the same size as the rest of the car — 22x14 for an S, 28x14 for the M,
-  // which puts them alongside the rear's 26x15 M and the hood's 14x19 S rather than in a
-  // category of their own.
-  //
-  // Three, not five, because of what the nose actually is: the plate caps this strip at
-  // y 0.445 and the headlights at y 0.59, which leaves 14cm of height, and at that height the
-  // fog lenses cap the width at |x| 0.47. Ninety centimetres of usable width. Five zones only
-  // fit it by shrinking them, which is what made the last two attempts look wrong.
+  // ── REAR, 14 ── read from behind, so the engine lid is probed with `deck` rather than
+  // `down`: same ray, but left and right the way a person standing behind the car sees them.
+  // The badge band and the diffuser are 8cm and 5cm tall — nothing fits them that is not a
+  // stripe, so nothing is sold there.
+  { panel: 'rear', probe: 'deck', v: -1.80, h: 0.13, name: 'Rear — engine lid', zones: [
+    { id: 'B1', tier: 'S', u: -0.36, w: 0.16 },
+    { id: 'B2', tier: 'S', u: -0.18, w: 0.16 },
+    { id: 'B3', tier: 'S', u:  0.00, w: 0.16 },
+    { id: 'B4', tier: 'S', u:  0.18, w: 0.16 },
+    { id: 'B5', tier: 'S', u:  0.36, w: 0.16 },
+  ]},
+  { panel: 'rear', probe: 'rear', v: 0.605, h: 0.095, name: 'Rear — above the plate', zones: [
+    { id: 'B6', tier: 'S', u: -0.28, w: 0.22 },
+    { id: 'B7', tier: 'S', u:  0.00, w: 0.22 },
+    { id: 'B8', tier: 'S', u:  0.28, w: 0.22 },
+  ]},
+  { panel: 'rear', probe: 'rear', v: 0.445, h: 0.185, name: 'Rear — beside the plate', zones: [
+    { id: 'B9',  tier: 'M', u: -0.45, w: 0.24 },
+    { id: 'B10', tier: 'L', u: -0.74, w: 0.22, h: 0.20, v: 0.47 },
+    { id: 'B11', tier: 'L', u:  0.74, w: 0.22, h: 0.20, v: 0.47 },
+    { id: 'B12', tier: 'M', u:  0.45, w: 0.24 },
+  ]},
+  { panel: 'rear', probe: 'rear', v: 0.283, h: 0.085, name: 'Rear — bumper corners', zones: [
+    { id: 'B13', tier: 'M', u: -0.78, w: 0.20 },
+    { id: 'B14', tier: 'M', u:  0.78, w: 0.20 },
+  ]},
+
+  // ── FRONT, 3 ── the plate caps this strip at y 0.445 and the headlights at 0.59, and at
+  // that height the fog lenses cap the width at |x| 0.47: 14cm by 90cm. Three full-size zones
+  // fit it with room between them. A fourth only fits by shrinking them.
   { panel: 'front', probe: 'front', v: 0.518, h: 0.135, name: 'Front — the nose', zones: [
     { id: 'P1', tier: 'S', u: -0.30, w: 0.22 },
     { id: 'P2', tier: 'M', u:  0.00, w: 0.28 },
