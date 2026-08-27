@@ -3,9 +3,27 @@
 
 import { sb, sbRpc, json, route } from './_lib.js';
 
+// One-off cleanup, to be deleted once the board reads zero.
+//
+// Demo mode is gone from the code, but the rows it wrote are still on the board, and the
+// endpoint that could have cleared them went with it. A DEMO- order id can never belong to a
+// real purchase — nothing writes that prefix any more — so deleting them is always correct.
+// Once per cold start, not once per request, and a failure just means the next one retries.
+let demoRowsPurged = false;
+async function purgeDemoRows() {
+  if (demoRowsPurged) return;
+  try {
+    await sb('purchases?paypal_order_id=like.DEMO-*', { method: 'DELETE' });
+    demoRowsPurged = true;
+  } catch (err) {
+    console.warn('[zones] demo row purge failed, will retry', err.message);
+  }
+}
+
 export default route(async (req, res) => {
   if (req.method !== 'GET') return json(res, 405, { error: 'GET only' });
 
+  await purgeDemoRows();
   await sbRpc('release_expired_holds').catch(() => {});   // best effort; never blocks a read
 
   const rows = await sb('purchases?select=zone_id,status,brand_name,brand_url,artwork_url,paid_at' +
