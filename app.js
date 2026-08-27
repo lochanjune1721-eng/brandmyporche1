@@ -121,9 +121,16 @@ function showReturnMessage() {
   }
 }
 
+// A buyer coming back from checkout must not be handed a board the edge cached before their
+// purchase. Read from the URL rather than set later: the first refresh() runs before the
+// return message is handled, and that first one is exactly the one that has to be current.
+let bustCache = /[?&](bought|cancelled)=/.test(location.search);
+
 async function refresh() {
   try {
-    const res = await fetch('/api/zones', { headers: { accept: 'application/json' } });
+    const url = bustCache ? `/api/zones?t=${Date.now()}` : '/api/zones';
+    bustCache = false;
+    const res = await fetch(url, { headers: { accept: 'application/json' } });
     if (!res.ok) throw new Error(`/api/zones ${res.status}`);
     const data = await res.json();
     sold = new Map((data.sold || []).map(s => [s.zone, s]));

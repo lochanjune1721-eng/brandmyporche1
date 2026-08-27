@@ -122,7 +122,14 @@ export function initViewer(stage, cfg, clickCb) {
   const status = t => { const el = document.getElementById('model-status'); if (el) el.textContent = t; };
   const fallbackTimer = setTimeout(() => { if (!modelRoot) buildFallback(status); }, 12000);
 
-  loader.load(cfg.modelUrl, gltf => {
+  // The bytes were requested by the inline script in <head>, long before this module ran.
+  // Fall back to fetching them here if that script is absent (a different host page, a test).
+  const bytes = window.__carBytes ||
+    fetch(cfg.modelUrl).then(r => { if (!r.ok) throw new Error('model.glb ' + r.status); return r.arrayBuffer(); });
+
+  bytes
+    .then(buf => new Promise((ok, no) => loader.parse(buf, '', ok, no)))
+    .then(gltf => {
     clearTimeout(fallbackTimer);
     modelRoot = gltf.scene;
     normaliseModel(modelRoot);
@@ -190,13 +197,12 @@ export function initViewer(stage, cfg, clickCb) {
       };
       window.dispatchEvent(new CustomEvent('zones-ready'));
     }));
-  }, xhr => {
-    if (xhr.total) status('Loading car ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
-  }, err => {
-    clearTimeout(fallbackTimer);
-    console.error('[viewer] model failed', err);
-    buildFallback(status);
-  });
+  })
+    .catch(err => {
+      clearTimeout(fallbackTimer);
+      console.error('[viewer] model failed', err);
+      buildFallback(status);
+    });
 
   animate();
   return { scene, camera, renderer, controls };

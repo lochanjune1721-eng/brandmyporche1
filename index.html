@@ -8,6 +8,35 @@
 <meta property="og:title" content="Brand My 911">
 <meta property="og:description" content="82 panels. $135,000. That's the car. A childhood dream, funded one logo at a time.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E0E0E'/%3E%3Ctext x='16' y='22' font-family='Helvetica,Arial' font-size='13' font-weight='bold' fill='%23fff' text-anchor='middle'%3E911%3C/text%3E%3C/svg%3E">
+<script>
+// The car is 12.7MB and, left alone, its download does not begin until the module graph has
+// resolved and three.js has been fetched and parsed — a serialised wait for no reason. Start
+// it here instead, at parse time, so it comes down alongside the CSS, the fonts and the JS.
+// viewer.js takes this ArrayBuffer and parses it; nothing fetches the file twice.
+window.__carBytes = (function () {
+  const t0 = performance.now();
+  return fetch('./model.glb').then(r => {
+    if (!r.ok) throw new Error('model.glb ' + r.status);
+    const total = +(r.headers.get('content-length') || 0);
+    if (!r.body || !total) return r.arrayBuffer();
+    // Read it progressively so the page can say how far along it is.
+    const reader = r.body.getReader(), chunks = [];
+    let got = 0;
+    return (function pump() {
+      return reader.read().then(({ done, value }) => {
+        if (done) return new Blob(chunks).arrayBuffer();
+        chunks.push(value); got += value.length;
+        window.__carProgress = got / total;
+        const el = document.getElementById('model-status');
+        if (el) el.textContent = 'Loading car ' + Math.round(got / total * 100) + '%';
+        return pump();
+      });
+    })();
+  }).then(buf => { window.__carMs = Math.round(performance.now() - t0); return buf; });
+})();
+window.__carBytes.catch(() => {});     // handled in viewer.js; this only stops the console noise
+</script>
+<link rel="modulepreload" href="./vendor/three/three.module.js">
 <link rel="stylesheet" href="style.css">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">

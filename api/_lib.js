@@ -162,9 +162,11 @@ export async function paypal(path, { method = 'GET', body, headers = {} } = {}) 
 
 export const money = cents => (cents / 100).toFixed(2);
 
-export function json(res, status, payload) {
+/** `cache` defaults to no-store because most of these endpoints move money and must never be
+ *  replayed from a cache. The board is the exception, and it says so at the call site. */
+export function json(res, status, payload, cache = 'no-store') {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', cache);
   res.status(status).send(JSON.stringify(payload));
 }
 

@@ -19,6 +19,12 @@ export default route(async (req, res) => {
       held.push(r.zone_id);          // someone is at the checkout right now
     }
   }
-  res.setHeader('Cache-Control', 'no-store');
-  json(res, 200, { sold, held, serverTime: new Date().toISOString(), demo: demoMode() || undefined });
+  // Every visitor polls this every 15 seconds. Served from the origin that is one Supabase
+  // read per visitor per poll, which is the first thing that falls over under real traffic;
+  // served from the edge it is one read per 10 seconds for everybody. The board is allowed to
+  // be ten seconds old — it already refreshes on a slower cycle than that — and a buyer never
+  // waits for it, because the fetch after a purchase carries a cache-buster.
+  // max-age=0 keeps the browser out of it, so a reload is always current.
+  json(res, 200, { sold, held, serverTime: new Date().toISOString(), demo: demoMode() || undefined },
+       'public, max-age=0, s-maxage=10, stale-while-revalidate=60');
 });
