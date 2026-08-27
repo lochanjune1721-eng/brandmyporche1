@@ -4,17 +4,17 @@
 // box, so a decal wraps the curve of the panel it sits on and the car's own depth buffer
 // hides the ones on the far side. Nothing is faked with screen-space overlays.
 //
-// A marker is a stitched outline and nothing more. It used to carry the tier letter, the size
-// and the price at three levels of detail that swapped as the camera moved; 82 of those turned
-// a silver car into a sheet of black stickers. What a zone costs and how big it is belongs on
-// the board and in the modal, where there is room to read it.
-//
-// What is left is how strongly each outline is drawn: the panel facing you is full, the rest
-// sit back at 0.62, and hover comes forward. Recomputed when the camera changes, never per frame.
+// The hard part at 82 zones is legibility, not geometry. Four rules do that work:
+//   1. panel focus   — the panel you are looking at is solid, the rest sit back at 0.52
+//   2. label decay   — a small zone drops its price, then its tier letter. Never its size.
+//   3. zoom promotes — leaning in gives a zone its detail back, which is how you read a crowded row
+//   4. hover and sold always win, whatever the other three say
+// Nothing is hover-only. Every zone shows what it is and how big it is without being touched.
+// All of it is recomputed when the camera changes, never per frame.
 //
 // Draw calls stay flat: the zones of a panel share one merged BufferGeometry and one
-// material, so 82 zones cost six draws, not 82. Opacity is a per-vertex float, so changing how
-// a panel is drawn never rebuilds geometry.
+// material, so 82 zones cost six draws, not 82. Detail level is a per-vertex UV rewrite into
+// the label atlas; opacity is a per-vertex float. Neither rebuilds geometry.
 //
 // DEBUG_PICK: set window.DEBUG_PICK = true, then click the car to log a probe coordinate you
 // can paste straight into a row in zones.js.
@@ -30,7 +30,10 @@ import { frameFrom } from './zone-frame.js';
 
 window.DEBUG_PICK = false;
 
-const DIM = 0.62;              // what a non-focused panel drops to — a light outline, still there
+const DIM = 0.52;              // what a non-focused panel drops to — still readable, not gone
+const FULL_PX = 58;            // above this: tier, size and price
+const SIZE_PX = 24;            // above this: tier and size. Below it, the size alone.
+const ZOOM_PROMOTE = 2.4;      // camera distance under which every zone gains one level
 const DECAL_DEPTH = 0.16;      // projector depth — deep enough to catch a curved panel
 
 let scene, camera, renderer, controls, stageEl, modelRoot, carMeshes = [];
@@ -108,7 +111,7 @@ export function initViewer(stage, cfg, clickCb) {
   tex.generateMipmaps = true;
   tex.needsUpdate = true;
 
-  for (const z of ZONES) zoneState.set(z.id, { zone: z, mode: null, opacity: 1, sold: false, screenPx: 0 });
+  for (const z of ZONES) zoneState.set(z.id, { zone: z, mode: 'full', opacity: 1, sold: false, screenPx: 0 });
 
   fitLens();
   bindPointer(renderer.domElement);
@@ -532,10 +535,13 @@ function screenHeight(st) {
 }
 
 
+const PROMOTE = { tiny: 'size', size: 'full', full: 'full' };
+
 function applyLabels(force = false) {
   if (!panels.size) return;
   const focus = (activePanel === 'all' || activePanel === 'free') ? facingPanel() : activePanel;
   const dist = camera.position.distanceTo(controls.target);
+  const zoomed = dist < ZOOM_PROMOTE;
 
   for (const [panel, rec] of panels) {
     let uvDirty = false, opDirty = false;
@@ -546,12 +552,13 @@ function applyLabels(force = false) {
       const st = zoneState.get(id);
       const hovered = hoveredId === id;
 
-      // A marker is one outline at one level of detail, so all that is left is how strongly it
-      // is drawn: the panel you are looking at is full, the rest sit back, hover comes forward.
+      // 1 — panel focus. 2 — decay by projected size. 3 — zoom promotes. 4 — hover and sold win.
       let opacity = st.sold || hovered ? 1 : (panel === focus ? 1 : DIM);
       const px = screenHeight(st);
-      const mode = 'plain';
-      if (st.sold) opacity = 0;                        // the logo decal stands in for the marker
+      let mode = px > FULL_PX ? 'full' : px > SIZE_PX ? 'size' : 'tiny';
+      if (zoomed && panel === focus) mode = PROMOTE[mode];
+      if (hovered || st.sold) mode = 'full';
+      if (st.sold) opacity = 0;                        // the logo decal stands in for the label
 
       const range = rec.ranges.get(id);
       if (force || mode !== st.mode) {
