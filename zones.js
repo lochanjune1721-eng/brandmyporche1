@@ -171,22 +171,26 @@ const ROWS = [
   // ── FRONT BUMPER, 13 ── motorsport contingency band: one dense row across the nose,
   // then the $250 row along the splitter lip. Plate (x ±0.27, y 0.30→0.44), grilles and
   // head/fog-light glass are all routed around.
-  { panel: 'front', probe: 'front', v: 0.536, h: 0.062, name: 'Front — contingency band', zones: [
-    { id: 'P1',  tier: 'S',   u: -0.785, w: 0.09 },
-    { id: 'P2',  tier: 'S',   u: -0.57, w: 0.18 },
-    { id: 'P3',  tier: 'S',   u: -0.31, w: 0.20 },
-    { id: 'P4',  tier: 'M',   u:  0.00, w: 0.36 },
-    { id: 'P5',  tier: 'S',   u:  0.31, w: 0.20 },
-    { id: 'P6',  tier: 'S',   u:  0.57, w: 0.18 },
-    { id: 'P7',  tier: 'S',   u:  0.785, w: 0.09 },
+  // The nose only offers a shallow strip: the plate caps it at y 0.445, the headlights at
+  // y 0.59, the fog lenses at |x| 0.51. Long thin zones fit that strip but read as a smear on
+  // the car, so these are cut short and square instead — smaller, but they look like something
+  // you would buy. Sizes here are the strip's, not the door's; the price is for the position.
+  { panel: 'front', probe: 'front', v: 0.549, h: 0.076, name: 'Front — contingency band', zones: [
+    { id: 'P1', tier: 'S', u: -0.615, w: 0.095 },
+    { id: 'P2', tier: 'S', u: -0.435, w: 0.095 },
+    { id: 'P3', tier: 'S', u: -0.255, w: 0.095 },
+    { id: 'P4', tier: 'M', u:  0.000, w: 0.130 },
+    { id: 'P5', tier: 'S', u:  0.255, w: 0.095 },
+    { id: 'P6', tier: 'S', u:  0.435, w: 0.095 },
+    { id: 'P7', tier: 'S', u:  0.615, w: 0.095 },
   ]},
-  { panel: 'front', probe: 'front', v: 0.474, h: 0.036, name: 'Front — the $250 row', zones: [
-    { id: 'P8',  tier: 'XS',  u: -0.375, w: 0.12 },
-    { id: 'P9',  tier: 'XS',  u: -0.225, w: 0.12 },
-    { id: 'P10', tier: 'XS',  u: -0.075, w: 0.12 },
-    { id: 'P11', tier: 'XS',  u:  0.075, w: 0.12 },
-    { id: 'P12', tier: 'XS',  u:  0.225, w: 0.12 },
-    { id: 'P13', tier: 'XS',  u:  0.375, w: 0.12 },
+  { panel: 'front', probe: 'front', v: 0.475, h: 0.048, name: 'Front — the $250 row', zones: [
+    { id: 'P8',  tier: 'XS', u: -0.230, w: 0.062 },
+    { id: 'P9',  tier: 'XS', u: -0.138, w: 0.062 },
+    { id: 'P10', tier: 'XS', u: -0.046, w: 0.062 },
+    { id: 'P11', tier: 'XS', u:  0.046, w: 0.062 },
+    { id: 'P12', tier: 'XS', u:  0.138, w: 0.062 },
+    { id: 'P13', tier: 'XS', u:  0.230, w: 0.062 },
   ]},
 ];
 
