@@ -5,10 +5,11 @@
 // hides the ones on the far side. Nothing is faked with screen-space overlays.
 //
 // The hard part at 88 zones is legibility, not geometry. Four rules do that work:
-//   1. panel focus   — the panel you are looking at is solid, the rest drop to 0.18
-//   2. label decay   — a zone under 70px of screen height loses its price, under 40 its letter
+//   1. panel focus   — the panel you are looking at is solid, the rest sit back at 0.52
+//   2. label decay   — a small zone drops its price, then its tier letter. Never its size.
 //   3. zoom promotes — leaning in gives a zone its detail back, which is how you find the XS row
 //   4. hover and sold always win, whatever the other three say
+// Nothing is hover-only. Every zone shows what it is and how big it is without being touched.
 // All of it is recomputed when the camera changes, never per frame.
 //
 // Draw calls stay flat: the zones of a panel share one merged BufferGeometry and one
@@ -29,16 +30,16 @@ import { frameFrom } from './zone-frame.js';
 
 window.DEBUG_PICK = false;
 
-const DIM = 0.18;              // what a non-focused panel drops to
-const FULL_PX = 70;            // above this a zone shows its letter and its price
-const LETTER_PX = 40;          // above this, just the letter
+const DIM = 0.52;              // what a non-focused panel drops to — still readable, not gone
+const FULL_PX = 58;            // above this: tier, size and price
+const SIZE_PX = 24;            // above this: tier and size. Below it, the size alone.
 const ZOOM_PROMOTE = 2.4;      // camera distance under which every zone gains one level
 const DECAL_DEPTH = 0.16;      // projector depth — deep enough to catch a curved panel
 
 let scene, camera, renderer, controls, stageEl, modelRoot, carMeshes = [];
 let raycaster, pointer, atlas, panels = new Map(), zoneState = new Map();
 let onZoneClick, hoveredId = null, activePanel = 'all', cameraDirty = true;
-let autoSpin = true, spinT = 0;
+let autoSpin = true, spinT = 0, spinStarted = false;
 let basePixelRatio = 1, pixelScale = 1, frameAvg = 16, frameSamples = 0;
 const logoDecals = new Map();
 const clock = new THREE.Clock();
@@ -55,7 +56,7 @@ export function initViewer(stage, cfg, clickCb) {
   scene.fog = new THREE.Fog(0x0B0E14, 9, 20);
 
   camera = new THREE.PerspectiveCamera(42, stage.clientWidth / stage.clientHeight, 0.1, 60);
-  camera.position.set(3.4, 1.75, 3.6);
+  camera.position.set(...VIEWS.hero.pos);      // land on the whole car, not on a detail
 
   renderer = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: mobile ? 'low-power' : 'high-performance' });
   basePixelRatio = Math.min(devicePixelRatio, mobile ? 1 : 2);   // fragments are the phone's ceiling
@@ -88,7 +89,7 @@ export function initViewer(stage, cfg, clickCb) {
   controls.enablePan = false;
   controls.minDistance = 1.4; controls.maxDistance = 8;
   controls.maxPolarAngle = Math.PI / 2 - 0.05;
-  controls.target.set(0, 0.62, 0);
+  controls.target.set(...VIEWS.hero.target);
   controls.addEventListener('start', () => { autoSpin = false; });
   controls.addEventListener('change', () => { cameraDirty = true; });
 
@@ -499,7 +500,7 @@ function screenHeight(st) {
   return Math.abs(scratchA.y - scratchB.y) * 0.5 * stageEl.clientHeight;
 }
 
-const PROMOTE = { outline: 'letter', letter: 'full', full: 'full' };
+const PROMOTE = { tiny: 'size', size: 'full', full: 'full' };
 
 function applyLabels(force = false) {
   if (!panels.size) return;
@@ -519,7 +520,7 @@ function applyLabels(force = false) {
       // 1 — panel focus. 2 — decay by projected size. 3 — zoom promotes. 4 — hover and sold win.
       let opacity = st.sold || hovered ? 1 : (panel === focus ? 1 : DIM);
       const px = screenHeight(st);
-      let mode = px > FULL_PX ? 'full' : px > LETTER_PX ? 'letter' : 'outline';
+      let mode = px > FULL_PX ? 'full' : px > SIZE_PX ? 'size' : 'tiny';
       if (zoomed && panel === focus) mode = PROMOTE[mode];
       if (hovered || st.sold) mode = 'full';
       if (st.sold) opacity = 0;                        // the logo decal stands in for the label
@@ -654,10 +655,11 @@ function animate() {
   const dt = Math.min(0.05, clock.getDelta());
   pacePixels(dt * 1000);
   if (autoSpin) {
+    if (!spinStarted) { spinStarted = true; spinT = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z); }
     spinT += dt * 0.10;
     const r = Math.hypot(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
-    camera.position.x = controls.target.x + Math.sin(spinT + 0.75) * r;
-    camera.position.z = controls.target.z + Math.cos(spinT + 0.75) * r;
+    camera.position.x = controls.target.x + Math.sin(spinT) * r;
+    camera.position.z = controls.target.z + Math.cos(spinT) * r;
     camera.lookAt(controls.target);
     cameraDirty = true;
   }
@@ -672,6 +674,7 @@ function animate() {
 export function setPanel(panel) { activePanel = panel; cameraDirty = true; }
 
 const VIEWS = {
+  hero:  { pos: [0, 1.35, 4.6],   target: [0, 0.66, 0] },      // whole car, turntable centred on it
   top:   { pos: [0, 5.0, 0.25],   target: [0, 0.8, 0] },
   hood:  { pos: [0, 2.5, 3.0],    target: [0, 0.78, 1.5] },
   front: { pos: [0, 1.35, 4.2],   target: [0, 0.62, 1.7] },
@@ -682,6 +685,7 @@ const VIEWS = {
 
 export function setView(name) {
   const v = VIEWS[name]; if (!v) return;
+  spinStarted = false;
   flyTo(new THREE.Vector3(...v.pos), new THREE.Vector3(...v.target));
 }
 
@@ -703,7 +707,10 @@ function flyTo(p1, t1) {
   })();
 }
 
-export function freeSpin() { autoSpin = true; }
+export function freeSpin() {
+  spinT = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
+  autoSpin = true;
+}
 
 /** Put a winner's logo on their zone — same rectangle, same size, same place. */
 export function applyDecal(zone, logoUrl) {

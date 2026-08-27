@@ -72,13 +72,20 @@ The geometry is the easy half. Four rules keep the car readable, all recomputed 
 changes rather than every frame:
 
 1. **Panel focus.** The panel you are looking at renders at full opacity; every other panel
-   drops to 0.18. In free spin, whichever panel most faces the camera wins.
-2. **Labels decay by size.** Above 70px of projected height a zone shows its tier letter and
-   its price; above 40px, the letter; below that, just the outline.
+   sits back at 0.52 — quieter, but never invisible. In free spin, whichever panel most faces
+   the camera wins.
+2. **Labels decay by size, but never lose the size.** Above 58px of projected height a zone
+   shows its tier, its centimetres and its price; above 24px, tier and centimetres; below
+   that, the centimetres alone. Nothing is hover-only: a bidder should never have to touch a
+   zone, or open the media kit, to find out how big it is.
 3. **Zoom promotes.** Leaning in past 2.4m gives every zone in the focused panel one level
    back. That is how anyone ever finds the six XS zones without them cluttering the wide shot.
 4. **Hover and sold always win.** A hovered zone jumps to full. A sold zone shows its logo at
    full opacity in every view, because sold inventory is the best advertising the board has.
+
+Markers are near-black plates with a white dashed border, not translucent grey: on silver
+paint a grey plate disappears. A first visit lands on the whole car, turning slowly, rather
+than on a detail.
 
 Cost control: one merged `BufferGeometry` and one `ShaderMaterial` per panel, so 88 zones cost
 six draw calls. Detail level is a UV rewrite into a shared label atlas; opacity is a per-vertex

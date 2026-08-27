@@ -67,10 +67,10 @@
 <div class="stage-wrap">
   <div class="stage" id="stage">
     <div class="viewbar" id="viewbar">
-      <button data-view="hood" class="active">Hood</button><button data-view="top">Roof</button>
+      <button data-view="hood">Hood</button><button data-view="top">Roof</button>
       <button data-view="left">Left</button><button data-view="right">Right</button>
       <button data-view="rear">Rear</button><button data-view="front">Front</button>
-      <button data-view="free" id="freeBtn">Free spin</button>
+      <button data-view="free" id="freeBtn" class="active">Free spin</button>
     </div>
     <div class="stage-hint">Drag to rotate · scroll to zoom · zoom in to reveal the small zones · tap a zone to bid</div>
     <div id="model-status" class="model-status">Loading car…</div>
@@ -211,8 +211,9 @@ addEventListener('unhandledrejection', e => fail(String(e.reason?.message || e.r
 
 initViewer(document.getElementById('stage'), CONFIG, id => window.__openBid?.(id));
 initApp();
-setView('hood');
-setPanel('hood');
+// Land on the whole car, turning slowly, with focus following whichever panel faces you.
+// The camera already starts at the hero framing, so there is nothing to fly to.
+setPanel('free');
 
 document.querySelectorAll('#viewbar button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#viewbar button').forEach(x => x.classList.remove('active'));

@@ -8,11 +8,15 @@
 // Cells are drawn at the zone's real aspect ratio, so a 96×8cm banner gets a long thin cell
 // and its dashes stay the same length as everywhere else on the car.
 
-const MODES = ['full', 'letter', 'outline'];
+// Every level carries the size. A bidder should never have to hover, or open the media
+// kit, to find out how big the thing they are buying is.
+const MODES = ['full', 'size', 'tiny'];
 
-const INK = 'rgba(255,255,255,0.94)';
-const FILL = 'rgba(96,98,104,0.42)';
-const FILL_HOT = 'rgba(232,255,74,0.16)';
+const INK = 'rgba(255,255,255,0.96)';
+// Near-black, not grey. On silver paint a translucent grey plate disappears; a black one
+// reads from across the stage, which is the whole job of a zone marker.
+const FILL = 'rgba(9,10,13,0.70)';
+const FILL_HOT = 'rgba(46,52,8,0.70)';   // XS keeps a hint of the accent so the cheap row is findable
 
 /** Cell pixel height from the zone's real height, so big zones stay sharp when you zoom in
  *  and the six XS zones do not each burn a 256px row. */
@@ -35,9 +39,7 @@ export class ZoneAtlas {
     const wanted = new Map();
     for (const z of zones) {
       for (const mode of MODES) {
-        const key = mode === 'outline'
-          ? `outline|${z.wCm}`                       // no text, so only the shape matters
-          : `${mode}|${z.tier}|${z.price}|${z.wCm}`;
+        const key = `${mode}|${z.tier}|${z.price}|${z.wCm}`;
         this.keyOf.set(`${z.id}|${mode}`, key);
         if (!wanted.has(key)) wanted.set(key, { key, mode, zone: z });
       }
@@ -95,47 +97,48 @@ export class ZoneAtlas {
     c.stroke();
     c.setLineDash([]);
 
-    if (mode !== 'outline') {
-      c.textAlign = 'center';
-      c.textBaseline = 'alphabetic';
-      c.fillStyle = '#fff';
-      c.shadowColor = 'rgba(0,0,0,0.55)';
-      c.shadowBlur = Math.max(2, h * 0.06);
+    c.textAlign = 'center';
+    c.textBaseline = 'alphabetic';
+    c.fillStyle = '#fff';
+    c.shadowColor = 'rgba(0,0,0,0.7)';
+    c.shadowBlur = Math.max(2, h * 0.07);
 
-      const room = w - inset * 2 - Math.max(6, w * 0.06);
-      // Size to the cell's height, then shrink until it fits the cell's width. A 96x8cm
-      // banner is mostly width, and "from $3,000" must not run off the end of it.
-      const fit = (text, wanted, weight, family) => {
-        let px = Math.max(7, Math.round(wanted));
-        for (let i = 0; i < 24 && px > 7; i++) {
-          c.font = `${weight} ${px}px ${family}`;
-          if (c.measureText(text).width <= room) break;
-          px = Math.floor(px * 0.92);
-        }
+    const room = w - inset * 2 - Math.max(6, w * 0.06);
+    // Size to the cell's height, then shrink until it fits the cell's width. A 94x8cm banner
+    // is mostly width, and "from $3,000" must not run off the end of it.
+    const fit = (text, wanted, weight, family) => {
+      let px = Math.max(6, Math.round(wanted));
+      for (let i = 0; i < 26 && px > 6; i++) {
         c.font = `${weight} ${px}px ${family}`;
-        return px;
-      };
-
-      const GROT = '"Space Grotesk", Inter, system-ui, sans-serif';
-      const SANS = 'Inter, system-ui, sans-serif';
-      const priceText = `from $${zone.price.toLocaleString('en-US')}`;
-
-      if (mode === 'full') {
-        const letterPx = fit(zone.tier, h * 0.44, 800, GROT);
-        const pricePx = fit(priceText, h * 0.21, 600, SANS);
-        const total = letterPx + pricePx * 1.28;
-        const top = (h - total) / 2;
-        c.font = `800 ${letterPx}px ${GROT}`;
-        c.fillText(zone.tier, w / 2, top + letterPx * 0.82);
-        c.font = `600 ${pricePx}px ${SANS}`;
-        c.globalAlpha = 0.92;
-        c.fillText(priceText, w / 2, top + letterPx + pricePx * 1.02);
-        c.globalAlpha = 1;
-      } else {
-        const letterPx = fit(zone.tier, h * 0.6, 800, GROT);
-        c.fillText(zone.tier, w / 2, h / 2 + letterPx * 0.36);
+        if (c.measureText(text).width <= room) break;
+        px = Math.floor(px * 0.92);
       }
-    }
+      c.font = `${weight} ${px}px ${family}`;
+      return px;
+    };
+
+    const GROT = '"Space Grotesk", Inter, system-ui, sans-serif';
+    const SANS = 'Inter, system-ui, sans-serif';
+    const sizeText = `${zone.wCm} cm`;
+    const priceText = `from $${zone.price.toLocaleString('en-US')}`;
+
+    // Lines, biggest first. Whatever the level, the size is on the label.
+    const lines = mode === 'full'
+      ? [[zone.tier, 0.34, 800, GROT], [sizeText, 0.19, 600, SANS], [priceText, 0.17, 500, SANS]]
+      : mode === 'size'
+        ? [[zone.tier, 0.42, 800, GROT], [sizeText, 0.24, 600, SANS]]
+        : [[sizeText, 0.5, 700, SANS]];
+
+    const sized = lines.map(([t, frac, weight, family]) => ({ t, weight, family, px: fit(t, h * frac, weight, family) }));
+    const total = sized.reduce((a, l, i) => a + l.px * (i ? 1.28 : 1), 0);
+    let baseline = (h - total) / 2;
+    sized.forEach((l, i) => {
+      baseline += i === 0 ? l.px * 0.82 : l.px * 1.28;
+      c.font = `${l.weight} ${l.px}px ${l.family}`;
+      c.globalAlpha = i === 0 ? 1 : i === 1 ? 0.95 : 0.85;
+      c.fillText(l.t, w / 2, baseline);
+    });
+    c.globalAlpha = 1;
     c.restore();
   }
 }
